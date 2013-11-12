@@ -1,0 +1,216 @@
+/**
+ * Copyright (c) 2013, Cloudera, Inc. All Rights Reserved.
+ *
+ * Cloudera, Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"). You may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * This software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for
+ * the specific language governing permissions and limitations under the
+ * License.
+ */
+@namespace("com.cloudera.gertrude.experiments.avro")
+protocol Experiments {
+
+  // Conditions specify the business logic that decide how experiments and parameters
+  // should be configured for a given request.
+  record ConditionDefinition {
+    // The name of the condition function to use. This name must map to a condition
+    // function that is registered with the experiment handler.
+    string name;
+
+    // An optional list of arguments for the condition function.
+    union{array<string>, null} args;
+
+    // Applies the not operator to the result of the condition function call.
+    boolean negate = false;
+  }
+
+  enum ModifierOperator { OVERRIDE, ADD, MULTIPLY }
+  enum ConditionOperator { AND, OR }
+  // Note, INT in this context is a 64-bit integer (also known as a long)
+  enum FlagType { BOOL, INT, DOUBLE, STRING }
+
+  record ModifierDefinition {
+    ModifierOperator operator;
+    string value;
+    union{array<ModifierDefinition>, null} modifiers;
+    union{array<ConditionDefinition>, null} conditions; 
+    union{ConditionOperator, null} condition_merge_operator;
+  }
+
+  // Represents a single configurable parameter within
+  // the experiment framework.
+  record ExperimentFlagDefinition {
+    // The name of the flag, which must be unique within a single server configuration.
+    string name;
+
+    // A longer description of the purpose of this flag.
+    string description;
+
+    // The initial value for this flag that is the starting point for
+    // calculations perfomed by the modifiers, as a string.
+    string base_value;
+
+    // The data type of this flag, which is used for converting the base_value and
+    // all modifier values to the appropriate type.
+    FlagType flag_type;
+
+    // A list of modifiers to the base value for this flag. Modifiers define
+    // if-then logic for altering the value of this flag based on attributes
+    // of the request.
+    union{array<ModifierDefinition>, null} modifiers;
+  }
+
+  enum OverrideOperator { REPLACE, APPEND, PREPEND }
+  record OverrideDefinition {
+    // The name of the flag we want to modify.
+    string name;
+
+    // The strategy to use for modifying the experiment flag. By default,
+    // we will append our modifiers to the existing modifiers in the
+    // flag definition for the experiment. We can also replace the
+    // existing modifiers entirely by using the REPLACE operator, or
+    // prefix the existing modifiers with our modifiers by using the
+    // PREPEND operator.
+    OverrideOperator operator = "REPLACE";
+
+    // A new base value to use. Only valid when the operator is REPLACE.
+    union{string, null} base_value;
+
+    // The modifiers that define the changes to the flag
+    // that are defined in this experiment.
+    union{array<ModifierDefinition>, null} modifiers;
+  }
+
+  // For bucket diversions, the BucketRange record provides a shorthand
+  // way of specifying that an entire range of buckets should be
+  // assigned to an experiment.
+  record BucketRange {
+    // The start of the range, inclusive. Must be greater than or equal to 0.
+    int start;
+
+    // The end of the range, exclusive. Must be larger than the start value.
+    int end;
+  }
+
+  record ExperimentDefinition {
+    // A short name to identify this experiment, not required to be unique.
+    string name;
+
+    // An optional textual description of the purpose of this experiment.
+    string description = "";
+
+    // The person to contact for issues related to this experiment.
+    string owner;
+
+    // A globally unique integer identifier for this experiment, used for logging
+    // which experiments a request was in and for forcing a request to use a
+    // particular experiment.
+    int id;
+
+    // The ID of the layer this experiment is assigned to.
+    int layer_id;
+
+    // Indicates that this experiment defines a new domain that may contain other
+    // layers and experiments inside of it.
+    boolean domain = false;
+
+    // The identifier of the control for this experiment. A control experiment ID
+    // MUST be specified. If this experiment represents a control for other experiments or
+    // defines a domain, then the experiment_id should be equal to the control_experiment_id.
+    int control_id;
+
+    // The conditions that trigger this experiment, if any. An experiment and its controls
+    // should have the same triggering conditions.
+    union{array<ConditionDefinition>, null} conditions;
+
+    // The rule for combining conditions if there is more than one.
+    union{ConditionOperator, null} condition_merge_operator;
+
+    // The modifications to parameters associated with this experiment. This should
+    // only be absent for control experiments.
+    union{array<OverrideDefinition>, null} overrides;
+
+    // The identifier of the diversion criteria for this experiment. It may be possible to
+    // divert an experiment in multiple ways on a given request: by a login ID, by a cookie,
+    // or simply at random. The experiment handler should be configured with the different
+    // diversion types and their rank ordering in processing requests depending on what
+    // information is allocated to each request.
+    int diversion_id;
+
+    // Each diversion criteria defines a fixed number of buckets that can be allocated to
+    // experiments. These fields specify which buckets for the diversion criteria are
+    // allocated to this experiment.
+    union{array<int>, null} buckets;
+    union{array<BucketRange>, null} bucket_ranges;
+  }
+
+  record DiversionDefinition {
+    // A unique identifier for this diversion type.
+    int id;
+
+    // A short description of what features of the request are used by this
+    // diversion criteria (e.g., "UserID", "Cookie", etc.)
+    string name;
+
+    // Indicates that this is a random diversion criteria that is not linked to
+    // any fixed parameter in the request, such as a cookie or user identifier.
+    boolean random = false;
+
+    // The number of buckets for this type of diversion. Valid bucket ranges for
+    // experiments using this bucket criteria are values between 0 (inclusive) and
+    // num_buckets (exclusive).
+    int num_buckets;
+  }
+
+  record LayerDefinition {
+    // A unique integer for each layer.
+    int id;
+
+    // The domain that contains this layer. Zero is the default (top-level) domain.
+    int domain_id = 0;
+
+    // A descriptive name that identifies the purpose of this layer.
+    string name;
+
+    // Indicates whether this is a temporary layer for launching a new feature (true)
+    // or a permanent layer for running experiments (false). If launch is true, then
+    // the domain_id must be zero.
+    boolean launch = false;
+
+    // A unique identifier to use for requests that did not divert into any buckets within this layer.
+    int unbiased_id;
+
+    // A unique identifier to use for requests that diverted into a bucket based on a fixed
+    // identifier (like a cookie or login ID) but that did not satisfy the conditions associated
+    // with the experiment/domain that owned that bucket. Only required if there are diversion
+    // criteria that allow fixed diversion.
+    int fixed_biased_id = 0;
+
+    // A unique identifier to use for requests that diverted into a bucket based on a random identifier
+    // but did not satisfy the conditions associated with the experiment that owned that bucket.
+    // Only required if there are diversion criteria that allow random diversion.
+    int random_biased_id = 0;
+  }
+
+  // A single record that contains all of the records we need to define
+  // an experiment configuration.
+  record ExperimentDeployment {
+    // First, we load the experiment flag definitions.
+    array<ExperimentFlagDefinition> flag_definitions;
+
+    // Followed by the diversion criteria.
+    array<DiversionDefinition> diversions;
+
+    // And then we cycle through the layer definitions, starting with those
+    // in the default domain (domain_id = 0), followed by the experimens/domains
+    // defined within those layers, and then back through the layers that are
+    // defined in subdomains, etc., until all of the configs have been loaded.
+    array<LayerDefinition> layers;
+    array<ExperimentDefinition> experiments;
+  }
+}
