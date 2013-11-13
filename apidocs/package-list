@@ -1,0 +1,10 @@
+com.cloudera.gertrude
+com.cloudera.gertrude.calculate
+com.cloudera.gertrude.condition
+com.cloudera.gertrude.curator
+com.cloudera.gertrude.deploy
+com.cloudera.gertrude.experiments.avro
+com.cloudera.gertrude.file
+com.cloudera.gertrude.server
+com.cloudera.gertrude.server.condition
+com.cloudera.gertrude.space
