@@ -50,7 +50,6 @@ public interface Segment {
   /**
    * The set of buckets claimed by this {@code Segment} within its assigned {@link Layer} and
    * {@link DiversionCriterion}.
-   * @return
    */
   SortedSet<Integer> getBuckets();
 
