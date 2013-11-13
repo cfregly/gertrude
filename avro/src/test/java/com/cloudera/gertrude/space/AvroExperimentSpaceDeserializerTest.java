@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.SortedSet;
 
 import static com.cloudera.gertrude.space.AvroDataUtils.*;
+import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.assertEquals;
 
 public final class AvroExperimentSpaceDeserializerTest {
@@ -195,7 +196,7 @@ public final class AvroExperimentSpaceDeserializerTest {
     assertEquals(29 * 2, state.getInt(foo));
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testTwoLayersWithIllegalOverrides() throws Exception {
     int numBuckets = 100;
     SegmentInfo s1 = new SegmentInfo(10, 1, 0, ImmutableSortedSet.of(80));
@@ -209,7 +210,7 @@ public final class AvroExperimentSpaceDeserializerTest {
         .setLayers(ImmutableList.of(layerDef(1, 0, false, 1), layerDef(2, 0, false, 4)))
         .setExperiments(ImmutableList.of(exptDef(s1, 10, o1), exptDef(s2, 20, o2)))
         .build();
-    aedp.load(deployment, "");
+    assertNull(aedp.load(deployment, ""));
   }
 
   @Test

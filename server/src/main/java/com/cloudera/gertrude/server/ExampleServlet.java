@@ -15,7 +15,6 @@
 package com.cloudera.gertrude.server;
 
 import com.cloudera.gertrude.ExperimentFlag;
-import com.cloudera.gertrude.ExperimentState;
 import com.cloudera.gertrude.Experiments;
 
 import javax.servlet.ServletException;
@@ -35,17 +34,11 @@ public class ExampleServlet extends HttpServlet {
   @Override
   protected void doGet(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
-    ExperimentState state = GertrudeUtils.getState(request);
-    if (state == null) {
-      response.setContentType("text/plain");
-      response.getWriter().println("No ExperimentState configured!");
-      return;
-    }
-
-    if (!state.get(SKIP_RESPONSE)) {
-      String responseText = state.get(RESPONSE_TEXT);
-      if (state.getInt(MAX_RESPONSE_LENGTH) > 0) {
-        responseText = responseText.substring(0, state.getInt(MAX_RESPONSE_LENGTH));
+    if (GertrudeUtils.getFlagValue(request, SKIP_RESPONSE)) {
+      String responseText = GertrudeUtils.getFlagValue(request, RESPONSE_TEXT);
+      int maxLength = GertrudeUtils.getFlagValue(request, MAX_RESPONSE_LENGTH).intValue();
+      if (maxLength > 0) {
+        responseText = responseText.substring(0, maxLength);
       }
       response.setContentType("text/plain");
       response.getWriter().println(responseText);

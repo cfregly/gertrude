@@ -14,6 +14,10 @@
  */
 package com.cloudera.gertrude.deploy;
 
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParametersDelegate;
+import com.cloudera.gertrude.ExperimentFlag;
+import com.cloudera.gertrude.condition.ReflectionConditionFactory;
 import com.cloudera.gertrude.experiments.avro.BucketRange;
 import com.cloudera.gertrude.experiments.avro.ConditionDefinition;
 import com.cloudera.gertrude.experiments.avro.ConditionOperator;
@@ -27,8 +31,10 @@ import com.cloudera.gertrude.experiments.avro.ModifierDefinition;
 import com.cloudera.gertrude.experiments.avro.ModifierOperator;
 import com.cloudera.gertrude.experiments.avro.OverrideDefinition;
 import com.cloudera.gertrude.experiments.avro.OverrideOperator;
+import com.cloudera.gertrude.space.AvroExperimentSpaceDeserializer;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
 import org.apache.avro.file.DataFileWriter;
@@ -40,12 +46,34 @@ import org.apache.avro.specific.SpecificDatumWriter;
 import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public class AvroSupport {
 
+  @Parameter(names = "--skip-validation", description = "Skip validation checks on input config files.")
+  private boolean skipValidation = false;
+
+  @ParametersDelegate
+  private ConditionFactorySupport conditionFactorySupport = new ConditionFactorySupport();
+
+  @ParametersDelegate
+  private ExperimentFlagSupport experimentFlagSupport = new ExperimentFlagSupport();
+
   private final DatumWriter<ExperimentDeployment> writer = new SpecificDatumWriter<ExperimentDeployment>(
       ExperimentDeployment.class);
+
+  public AvroSupport() {}
+
+  public AvroSupport(
+      boolean skipValidation,
+      ConditionFactorySupport conditionFactorySupport,
+      ExperimentFlagSupport experimentFlagSupport) {
+    this.skipValidation = skipValidation;
+    this.conditionFactorySupport = conditionFactorySupport;
+    this.experimentFlagSupport = experimentFlagSupport;
+  }
 
   public byte[] toBytes(ExperimentDeployment deployment) throws Exception {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -74,11 +102,25 @@ public class AvroSupport {
     return base.getConfigList(path);
   }
 
-  public ExperimentDeployment createDeployment(Config base) {
+  public ExperimentDeployment createDeployment(Config base) throws IOException {
+    ExperimentDeployment deployment = toExperimentDeployment(base);
+    if (!skipValidation) {
+      AvroExperimentSpaceDeserializer deserializer = new AvroExperimentSpaceDeserializer(false);
+      deserializer.initialize(
+          experimentFlagSupport.getExperimentFlags(),
+          conditionFactorySupport.getConditionFactory());
+      if (deserializer.load(deployment, "VALIDATIION") == null) {
+        return null;
+      }
+    }
+    return deployment;
+  }
+
+  private ExperimentDeployment toExperimentDeployment(Config base) {
     List<ExperimentDefinition> experimentDefinitions = Lists.newArrayList();
-    experimentDefinitions.addAll(getExperiments(getConfigList(base, "EXPERIMENTS", false)));
+    experimentDefinitions.addAll(getExperiments(getConfigList(base, "EXPERIMENTS", false), false));
     if (base.hasPath("DOMAINS")) {
-      experimentDefinitions.addAll(getExperiments(getConfigList(base, "DOMAINS", false)));
+      experimentDefinitions.addAll(getExperiments(getConfigList(base, "DOMAINS", false), true));
     }
 
     return ExperimentDeployment.newBuilder()
@@ -148,7 +190,7 @@ public class AvroSupport {
     });
   }
 
-  private List<ExperimentDefinition> getExperiments(List<? extends Config> experimentConfig) {
+  private List<ExperimentDefinition> getExperiments(List<? extends Config> experimentConfig, final boolean isDomain) {
     return Lists.transform(experimentConfig, new Function<Config, ExperimentDefinition>() {
       @Override
       public ExperimentDefinition apply(@Nullable Config input) {
@@ -162,7 +204,7 @@ public class AvroSupport {
             .setDiversionId(input.getInt("diversion-id"))
             .setConditions(getConditions(getConfigList(input, "conditions", false)))
             .setConditionMergeOperator(getConditionOperator(input))
-            .setDomain(input.hasPath("domain") && input.getBoolean("domain"))
+            .setDomain((input.hasPath("domain") && input.getBoolean("domain")) || isDomain)
             .setBuckets(input.hasPath("buckets") ? input.getIntList("buckets") : ImmutableList.<Integer>of())
             .setBucketRanges(getBucketRanges(getConfigList(input, "bucket-ranges", false)))
             .setOverrides(getOverrides(getConfigList(input, "overrides", false)))

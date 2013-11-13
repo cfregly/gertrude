@@ -16,6 +16,7 @@ package com.cloudera.gertrude.deploy;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.ParametersDelegate;
 import com.cloudera.gertrude.experiments.avro.ExperimentDeployment;
 import com.typesafe.config.Config;
@@ -25,12 +26,16 @@ import java.io.File;
 
 public class Cyclone {
 
-  @Parameter(names = "--input", description="The input config file to parse, in either JSON or HOCON format",
+  @Parameter(names = "--input", description="The input config file to parse, in either JSON or HOCON format.",
       required=true)
   private String inputFile;
 
-  @Parameter(names = "--output", description="The output destination, which is either a local file or ZK path")
+  @Parameter(names = "--output", description="The output destination, either a local file or Zookeeper path.",
+      required=true)
   private String output;
+
+  @Parameter(names = {"help", "-help", "-h", "--help"}, help=true, hidden=true)
+  private boolean help = false;
 
   @ParametersDelegate
   private AvroSupport avroSupport = new AvroSupport();
@@ -47,20 +52,37 @@ public class Cyclone {
     this.curatorSupport = curatorSupport;
   }
 
-  private void run(String[] args) throws Exception {
-    // parse args
-    new JCommander(this, args);
+  private int run(String[] args) throws Exception {
+    JCommander jc = new JCommander(this);
+    jc.setProgramName("cyclone");
+    try {
+      jc.parse(args);
+    } catch (ParameterException e) {
+      System.err.println(e.getLocalizedMessage());
+      jc.usage();
+      return 1;
+    }
+
+    if (help) {
+      jc.usage();
+      return 0;
+    }
 
     Config config = ConfigFactory.parseFileAnySyntax(new File(inputFile));
     ExperimentDeployment deployment = avroSupport.createDeployment(config);
+    if (deployment == null) {
+      System.err.println("Could not create valid experiment deployment, exiting...");
+      return 1;
+    }
     if (curatorSupport.isEnabled()) {
       curatorSupport.deploy(avroSupport.toBytes(deployment), output);
     } else {
       avroSupport.deploy(deployment, output);
     }
+    return 0;
   }
 
   public static void main(String[] args) throws Exception {
-    new Cyclone().run(args);
+    System.exit(new Cyclone().run(args));
   }
 }

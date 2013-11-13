@@ -22,13 +22,13 @@ import org.apache.curator.retry.RetryNTimes;
 
 public class CuratorSupport {
 
-  @Parameter(names = "--connect", description="The connect string for the Curator framework to talk to Zookeeper")
+  @Parameter(names = "--zk-connect", description="The connection string for the Zookeeper instance.")
   private String connectString;
 
-  @Parameter(names = "--retry-attempts", description="The number of times to retry a connection to Zookeeper")
+  @Parameter(names = "--zk-retry-attempts", description="The number of times to retry a connection to Zookeeper.")
   private int retryTimes = 3;
 
-  @Parameter(names = "--retry-interval", description="The retry interval for Zookeeper, in milliseconds")
+  @Parameter(names = "--zk-retry-interval", description="The retry interval for Zookeeper, in milliseconds.")
   private int retryMs = 2000;
 
   public CuratorSupport() {}

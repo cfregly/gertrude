@@ -93,12 +93,13 @@ final class LayerBuilder {
     return new LayerImpl(info, Hashing.md5(), allSegmentIds, b.build(), parent.getRandom());
   }
 
-  void allocateBuckets(int segmentId, DiversionCriterion criteria, SortedSet<Integer> buckets) {
+  void allocateBuckets(int segmentId, DiversionCriterion criteria, SortedSet<Integer> buckets)
+      throws ValidationException {
     if (buckets.first() < 0) {
-      throw new IllegalStateException("Negative buckets in segment: " + segmentId);
+      throw new ValidationException("Negative buckets in segment: " + segmentId);
     }
     if (buckets.last() >= criteria.getNumBuckets()) {
-      throw new IllegalStateException("Buckets in segment " + segmentId + " exceeds max buckets for criteria");
+      throw new ValidationException("Buckets in segment " + segmentId + " exceeds max buckets for criteria");
     }
     Map<Integer, Integer> allocatedBuckets = allocatedBucketsByDiversion.get(criteria.getId());
     if (allocatedBuckets == null) {
@@ -115,7 +116,7 @@ final class LayerBuilder {
         conflictSegments.add(allocatedBuckets.get(bucket));
       }
       sb.append(conflictSegments).append(" (Buckets: ").append(conflict).append(")");
-      throw new IllegalStateException(sb.toString());
+      throw new ValidationException(sb.toString());
     }
     for (Integer bucket : buckets) {
       allocatedBuckets.put(bucket, segmentId);
@@ -131,7 +132,8 @@ final class LayerBuilder {
     });
   }
 
-  FlagValueData checkOverrides(int experimentId, Map<String, FlagValueOverride<Object>> overrides) {
+  FlagValueData checkOverrides(int experimentId, Map<String, FlagValueOverride<Object>> overrides)
+      throws ValidationException {
     ImmutableMap.Builder<String, FlagValueCalculatorImpl<Object>> bb = ImmutableMap.builder();
     Map<Integer, Map<String, FlagValueCalculatorImpl<Object>>> lb = Maps.newHashMap();
     for (Map.Entry<String, FlagValueOverride<Object>> e : overrides.entrySet()) {
@@ -139,7 +141,7 @@ final class LayerBuilder {
       FlagValueOverride<Object> valueOverride = e.getValue();
       FlagValueCalculatorImpl<Object> base = parent.getFlagDefinition(name);
       if (base == null) {
-        throw new IllegalStateException("Experiment " + experimentId + " overrides non-existent flag " + name);
+        throw new ValidationException("Experiment " + experimentId + " overrides non-existent flag " + name);
       }
       bb.put(name, valueOverride.apply(base));
       flagOverridesByExperiment.put(name, experimentId);
@@ -149,7 +151,7 @@ final class LayerBuilder {
       if (!layerIds.contains(info.getLayerId())) {
         if (!layerIds.isEmpty()) {
           if (isLaunchLayer()) {
-            throw new IllegalStateException(String.format(
+            throw new ValidationException(String.format(
                 "Experiments in multiple launch layers override flag %s: layer %d (experiment %d) and layer(s) %s",
                 name, info.getLayerId(), experimentId, layerIds.toString()));
           } else {
@@ -165,7 +167,7 @@ final class LayerBuilder {
                   llOverride.put(name, valueOverride.apply(parent.getFlagFromExperiment(info.getId(), name)));
                 }
               } else if (parent.areLayersOverlapping(info.getLayerId(), otherLayerId)) {
-                throw new IllegalStateException(String.format(
+                throw new ValidationException(String.format(
                     "Experiments across overlapping layers override flag %s: layer %d (experiment %d) and layer(s) %s",
                     name, info.getLayerId(), experimentId, layerIds.toString()));
               }

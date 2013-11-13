@@ -34,7 +34,6 @@ public class DeployTest {
   @Test
   public void testCuratorDeploy() throws Exception {
     TestingServer server = new TestingServer();
-
     AvroSupport avroSupport = new AvroSupport();
     CuratorSupport curator = new CuratorSupport(server.getConnectString());
     ExperimentDeployment ed = avroSupport.createDeployment(ConfigFactory.load("gertrude.conf"));

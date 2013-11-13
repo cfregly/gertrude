@@ -131,19 +131,30 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
   }
 
   // Need to merge any existing deployment configs together before calling this
-  ExperimentSpace load(ExperimentDeployment deployment, String versionIdentifier) {
+  public ExperimentSpace load(ExperimentDeployment deployment, String versionIdentifier) {
     if (deployment.getFlagDefinitions() == null || deployment.getFlagDefinitions().isEmpty()) {
-      throw new IllegalArgumentException("No flags defined in deployment");
+      log.error("No flags defined in deployment");
+      return null;
     }
 
     ExperimentSpaceBuilder builder = new ExperimentSpaceBuilder(getExperimentFlags(), new Random());
     Map<String, FlagTypeParser<Object>> parsers = Maps.newHashMap();
     for (ExperimentFlagDefinition flagDef : deployment.getFlagDefinitions()) {
-      addFlagDefinition(flagDef, parsers, builder);
+      try {
+        addFlagDefinition(flagDef, parsers, builder);
+      } catch (ValidationException e) {
+        log.error("Experiment flag validation error: {}\nFor input: {}", e, flagDef);
+        return null;
+      }
     }
 
     for (DiversionDefinition divDef : emptyIfNull(deployment.getDiversions())) {
-      addDiversionCriterion(divDef, builder);
+      try {
+        addDiversionCriterion(divDef, builder);
+      } catch (ValidationException e) {
+        log.error("Diversion criteria validation error: {}\nFor input: {}", e, divDef);
+        return null;
+      }
     }
 
     Set<Integer> configuredLayerIds = Sets.newHashSet();
@@ -156,7 +167,12 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
       for (LayerDefinition layerDef : layerDefs) {
         if (configuredSegmentId.contains(layerDef.getDomainId()) &&
             !configuredLayerIds.contains(layerDef.getId())) {
-          addLayer(layerDef, builder);
+          try {
+            addLayer(layerDef, builder);
+          } catch (ValidationException e) {
+            log.error("Layer validation error: {}\nFor input: {}", e, layerDef);
+            return null;
+          }
           configuredLayerIds.add(layerDef.getId());
           layersAdded = true;
         }
@@ -169,7 +185,12 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
       for (ExperimentDefinition exptDef : emptyIfNull(deployment.getExperiments())) {
         if (configuredLayerIds.contains(exptDef.getLayerId()) &&
             !configuredSegmentId.contains(exptDef.getId())) {
-          addExperiment(exptDef, parsers, builder);
+          try {
+            addExperiment(exptDef, parsers, builder);
+          } catch (ValidationException e) {
+            log.error("Experiment validation error: {}\nFor input: {}", e, exptDef);
+            return null;
+          }
           configuredSegmentId.add(exptDef.getId());
         }
       }
@@ -181,7 +202,7 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
   void addFlagDefinition(
       ExperimentFlagDefinition definition,
       Map<String, FlagTypeParser<Object>> parsers,
-      ExperimentSpaceBuilder builder) {
+      ExperimentSpaceBuilder builder) throws ValidationException {
     String flagName = definition.getName().toString();
     FlagTypeParser<Object> parser = (FlagTypeParser<Object>) getParser(definition.getFlagType());
     builder.addFlagDefinition(
@@ -191,7 +212,8 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
     parsers.put(flagName, parser);
   }
 
-  static void addDiversionCriterion(DiversionDefinition diversion, ExperimentSpaceBuilder builder) {
+  static void addDiversionCriterion(DiversionDefinition diversion, ExperimentSpaceBuilder builder)
+      throws ValidationException {
     DiversionCriterion dc = new DiversionCriterion(
         diversion.getId(),
         diversion.getNumBuckets(),
@@ -199,7 +221,8 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
     builder.addDiversionCriterion(dc);
   }
 
-  static void addLayer(LayerDefinition layerDefinition, ExperimentSpaceBuilder builder) {
+  static void addLayer(LayerDefinition layerDefinition, ExperimentSpaceBuilder builder)
+      throws ValidationException {
     LayerInfo info = LayerInfo.builder(layerDefinition.getId())
         .domainId(layerDefinition.getDomainId())
         .launchLayer(layerDefinition.getLaunch())
@@ -212,7 +235,7 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
 
   void addExperiment(ExperimentDefinition exptDef,
                      Map<String, FlagTypeParser<Object>> parsers,
-                     ExperimentSpaceBuilder builder) {
+                     ExperimentSpaceBuilder builder) throws ValidationException {
     // Needs to be checked against existing bucket ranges
     SortedSet<Integer> buckets = getBuckets(exptDef.getBuckets(), exptDef.getBucketRanges());
     Condition condition = getCondition(exptDef.getConditions(), exptDef.getConditionMergeOperator());
@@ -223,7 +246,7 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
     builder.addExperimentInfo(info, exptDef.getDomain(), overrides);
   }
 
-  static FlagTypeParser<?> getParser(FlagType flagType) {
+  static FlagTypeParser<?> getParser(FlagType flagType) throws ValidationException {
     switch (flagType) {
       case BOOL:
         return FlagTypeParser.BOOLEAN_PARSER;
@@ -234,36 +257,36 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
       case STRING:
         return FlagTypeParser.STRING_PARSER;
       default:
-        throw new IllegalArgumentException("Unknown flag type: " + flagType);
+        throw new ValidationException("Unknown flag type: " + flagType);
     }
   }
 
   protected Map<String, FlagValueOverride<Object>> getOverrides(
       List<OverrideDefinition> overrides,
       Map<String, FlagTypeParser<Object>> parsers,
-      int experimentId) {
+      int experimentId) throws ValidationException {
     ImmutableMap.Builder<String, FlagValueOverride<Object>> b = ImmutableMap.builder();
     if (overrides != null) {
       for (OverrideDefinition definition : overrides) {
         String flagName = definition.getName().toString();
         FlagTypeParser<Object> parser = parsers.get(flagName);
         if (parser == null) {
-          throw new IllegalStateException(String.format(
+          throw new ValidationException(String.format(
               "Unknown experiment flag %s in experiment %d", flagName, experimentId));
         }
         List<Modifier<Object>> mods;
         try {
           mods = getModifiers(definition.getModifiers(), parser);
-        } catch (RuntimeException re) { // TODO make me a more specific parsing exception
-          log.error("Invalid modifier in overrides for flag {} in experiment {}", flagName, experimentId);
-          throw re;
+        } catch (ValidationException e) {
+          throw new ValidationException(String.format(
+              "Invalid modifier in overrides for flag %s in experiment %d", flagName, experimentId), e);
         }
 
         FlagValueOverride<Object> flagOverride;
         switch (definition.getOperator()) {
           case REPLACE:
             if (definition.getBaseValue() == null) {
-              throw new IllegalStateException(String.format(
+              throw new ValidationException(String.format(
                   "REPLACE must have non-null base value for flag %s in experiment %d", flagName, experimentId));
             }
             Object baseValue = parser.parse(definition.getBaseValue());
@@ -276,7 +299,7 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
             flagOverride = FlagValueOverride.createPrepend(mods);
             break;
           default:
-            throw new IllegalStateException("Unknown override operator: " + definition.getOperator());
+            throw new ValidationException("Unknown override operator: " + definition.getOperator());
         }
         b.put(flagName, flagOverride);
       }
@@ -299,32 +322,29 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
     return ret;
   }
 
-  protected <T> List<Modifier<T>> getModifiers(List<ModifierDefinition> definitions, FlagTypeParser<T> parser) {
+  protected <T> List<Modifier<T>> getModifiers(List<ModifierDefinition> definitions, FlagTypeParser<T> parser)
+      throws ValidationException{
     if (definitions == null || definitions.isEmpty()) {
       return ImmutableList.of();
     } else {
-      return Lists.transform(definitions, createModifierFunction(parser));
-    }
-  }
-
-  protected <T> Function<ModifierDefinition, Modifier<T>> createModifierFunction(final FlagTypeParser<T> parser) {
-    return new Function<ModifierDefinition, Modifier<T>>() {
-      @Override
-      public Modifier<T> apply(ModifierDefinition definition) {
+      List<Modifier<T>> modifiers = Lists.newArrayListWithExpectedSize(definitions.size());
+      for (ModifierDefinition definition : definitions) {
         List<Modifier<T>> mods = definition.getModifiers() != null ?
-            Lists.transform(definition.getModifiers(), this) :
+            getModifiers(definition.getModifiers(), parser) :
             ImmutableList.<Modifier<T>>of();
         Condition condition = getCondition(definition.getConditions(), definition.getConditionMergeOperator());
-        return new BasicModifier<T>(
+        modifiers.add(new BasicModifier<T>(
             parser.parse(definition.getValue()),
             getOperatorFunction(definition.getOperator(), parser),
             condition,
-            mods);
+            mods));
       }
-    };
+      return modifiers;
+    }
   }
 
-  protected Condition getCondition(List<ConditionDefinition> definitions, ConditionOperator operator) {
+  protected Condition getCondition(List<ConditionDefinition> definitions, ConditionOperator operator)
+      throws ValidationException {
     if (definitions == null || definitions.isEmpty()) {
       return Condition.TRUE;
     } else {
@@ -337,11 +357,19 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
           }
         });
         Condition c = getConditionFactory().create(definition.getName().toString());
-        c.initialize(args);
-        if (definition.getNegate() != null && definition.getNegate()) {
-          c = BooleanConditions.not(c);
+        if (c != null) {
+          try {
+            c.initialize(args);
+          } catch (Exception e) {
+            throw new ValidationException("Exception initializing condition \"" + definition.getName() + "\"", e);
+          }
+          if (definition.getNegate() != null && definition.getNegate()) {
+            c = BooleanConditions.not(c);
+          }
+          conditions.add(c);
+        } else {
+          throw new ValidationException("Unknown condition function name \"" + definition.getName() + "\"");
         }
-        conditions.add(c);
       }
       // May want to cache the c + args mappings to the instances...
       if (conditions.size() == 1) {
@@ -351,7 +379,7 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
       } else if (operator == ConditionOperator.OR) {
         return BooleanConditions.or(conditions);
       }
-      throw new IllegalArgumentException("Unknown condition operator: " + operator);
+      throw new ValidationException("Unknown condition operator: " + operator);
     }
   }
 

@@ -29,6 +29,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -37,6 +39,8 @@ import java.util.Set;
 import java.util.SortedMap;
 
 final class ExperimentSpaceBuilder {
+
+  private static final Logger log = LoggerFactory.getLogger(ExperimentSpaceBuilder.class);
 
   private final Map<String, FlagValueCalculatorImpl<Object>> flagDefinitions = Maps.newHashMap();
   private final Map<Integer, SegmentInfo> allSegments = Maps.newHashMap();
@@ -54,41 +58,42 @@ final class ExperimentSpaceBuilder {
     this.random = random;
   }
 
-  void addFlagDefinition(String name, Object baseValue, List<Modifier<Object>> mods) {
-    // First, check compiled flag definition if it exists.
+  void addFlagDefinition(String name, Object baseValue, List<Modifier<Object>> mods) throws ValidationException {
+    // Ensure that this flag hasn't been defined yet.
+    if (flagDefinitions.containsKey(name)) {
+      throw new ValidationException("Cannot re-define experiment flag \"" + name + "\"");
+    } else {
+      flagDefinitions.put(name, new FlagValueCalculatorImpl<Object>(baseValue, mods));
+    }
+
+    // Second, check compiled flag definition if it exists.
     ExperimentFlag<?> compiledDef = experimentFlags.get(name);
     if (compiledDef != null) {
       // Compare the types of the compiled and external values
       if (!compiledDef.getDefaultValue().getClass().equals(baseValue.getClass())) {
-        throw new IllegalStateException(String.format(
-            "Compiled type does not match external type for flag: %s (%s vs. %s)", name,
-            compiledDef.getDefaultValue().getClass(),
-            baseValue.getClass()));
+        throw new ValidationException(String.format(
+            "Compiled type does not match external type for flag \"%s\" (%s vs. %s)", name,
+            compiledDef.getDefaultValue().getClass().getSimpleName(),
+            baseValue.getClass().getSimpleName()));
       }
-    }
-    // TODO: should note this mismatch unless we're in config mode
-
-    // Next, ensure that this flag hasn't been defined yet.
-    if (flagDefinitions.containsKey(name)) {
-      throw new IllegalStateException("Cannot re-define experiment flag: " + name);
     } else {
-      flagDefinitions.put(name, new FlagValueCalculatorImpl<Object>(baseValue, mods));
+      log.warn("Experiment flag \"{}\" has not been defined in the compiled environment", name);
     }
   }
 
-  void addDiversionCriterion(DiversionCriterion criteria) {
+  void addDiversionCriterion(DiversionCriterion criteria) throws ValidationException {
     if (diversionCriteria.containsKey(criteria.getId())) {
-      throw new IllegalStateException("Cannot re-define diversion criteria: " + criteria.getId());
+      throw new ValidationException("Cannot re-define diversion criteria: " + criteria.getId());
     }
     diversionCriteria.put(criteria.getId(), criteria);
   }
 
-  void addLayer(LayerInfo info) {
+  void addLayer(LayerInfo info) throws ValidationException {
     if (layers.containsKey(info.getLayerId())) {
-      throw new IllegalStateException("Cannot re-define layer ID: " + info.getLayerId());
+      throw new ValidationException("Cannot re-define layer ID: " + info.getLayerId());
     }
     if (info.getDomainId() > 0 && info.isLaunchLayer()) {
-      throw new IllegalStateException(
+      throw new ValidationException(
           "Launch layer " + info.getLayerId() + " can only be defined in the default domain (domain_id = 0)");
     }
     LayerBuilder lb = new LayerBuilder(this, info);
@@ -98,7 +103,8 @@ final class ExperimentSpaceBuilder {
     }
   }
 
-  void addExperimentInfo(SegmentInfo info, boolean domain, Map<String, FlagValueOverride<Object>> overrides) {
+  void addExperimentInfo(SegmentInfo info, boolean domain, Map<String, FlagValueOverride<Object>> overrides)
+      throws ValidationException {
     LayerBuilder layerBuilder = checkSegment(info);
     allSegments.put(info.getId(), info);
     if (domain) {
@@ -122,7 +128,6 @@ final class ExperimentSpaceBuilder {
       }
     }
 
-    //TODO: build
     return new ExperimentSpace(
         versionIdentifier,
         flagDefinitions,
@@ -145,18 +150,18 @@ final class ExperimentSpaceBuilder {
     return Sets.intersection(getLineage(firstLayerId), getLineage(secondLayerId)).isEmpty();
   }
 
-  private LayerBuilder checkSegment(SegmentInfo info) {
+  private LayerBuilder checkSegment(SegmentInfo info) throws ValidationException {
     if (allSegments.containsKey(info.getId())) {
-      throw new IllegalStateException("Cannot re-define experiment ID: " + info.getId());
+      throw new ValidationException("Cannot re-define experiment ID: " + info.getId());
     }
 
     LayerBuilder layerBuilder = layers.get(info.getLayerId());
     if (layerBuilder == null) {
-      throw new IllegalStateException("Undefined layer ID: " + info.getLayerId());
+      throw new ValidationException("Undefined layer ID: " + info.getLayerId());
     }
     DiversionCriterion criteria = diversionCriteria.get(info.getDiversionId());
     if (criteria == null) {
-      throw new IllegalStateException("Undefined diversion criteria ID: " + info.getDiversionId());
+      throw new ValidationException("Undefined diversion criteria ID: " + info.getDiversionId());
     }
 
     // Make sure we have room for this segment in the current allocation.

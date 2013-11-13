@@ -1,0 +1,6 @@
+#!/bin/bash
+
+BASEDIR=$(dirname $0)
+MAINJAR=$BASEDIR/../target/gertrude-deploy-*-jar-with-dependencies.jar
+
+java -jar $MAINJAR $@
