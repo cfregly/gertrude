@@ -86,7 +86,7 @@ public final class ExperimentFlag<T> {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    ExperimentFlag that = (ExperimentFlag) o;
+    ExperimentFlag<?> that = (ExperimentFlag<?>) o;
 
     if (!defaultValue.equals(that.defaultValue)) return false;
     if (!flagTypeParser.equals(that.flagTypeParser)) return false;

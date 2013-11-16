@@ -67,7 +67,7 @@ public final class BasicModifier<T> implements Modifier<T> {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    BasicModifier that = (BasicModifier) o;
+    BasicModifier<?> that = (BasicModifier<?>) o;
 
     if (!condition.equals(that.condition)) return false;
     if (!modifiers.equals(that.modifiers)) return false;

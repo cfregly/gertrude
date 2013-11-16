@@ -19,13 +19,14 @@ import com.cloudera.gertrude.ConditionFactory;
 import com.cloudera.gertrude.ExperimentState;
 import com.google.common.collect.Maps;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Set;
 
 public final class ReflectionConditionFactory implements ConditionFactory {
-  private final Map<String, Class<? extends Condition>> classes = Maps.newHashMap();
+  private final Map<String, Class<? extends Condition<ExperimentState>>> classes = Maps.newHashMap();
 
-  public ReflectionConditionFactory register(String name, Class<? extends Condition> clazz) {
+  public ReflectionConditionFactory register(String name, Class<? extends Condition<ExperimentState>> clazz) {
     if (classes.put(name, clazz) != null) {
       throw new IllegalStateException("Multiple condition classes for name: " + name);
     }
@@ -39,12 +40,16 @@ public final class ReflectionConditionFactory implements ConditionFactory {
   }
 
   @Override
-  public Condition<? extends ExperimentState> create(String name) {
+  public Condition<ExperimentState> create(String name) {
     try {
-      return classes.get(name).newInstance();
+      return classes.get(name).getConstructor().newInstance();
     } catch (InstantiationException e) {
       throw new IllegalStateException("Could not create instance of condition function named: " + name, e);
     } catch (IllegalAccessException e) {
+      throw new IllegalStateException("Could not create instance of condition function named: " + name, e);
+    } catch (NoSuchMethodException e) {
+      throw new IllegalStateException("Could not create instance of condition function named: " + name, e);
+    } catch (InvocationTargetException e) {
       throw new IllegalStateException("Could not create instance of condition function named: " + name, e);
     }
   }

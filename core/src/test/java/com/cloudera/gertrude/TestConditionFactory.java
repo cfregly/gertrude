@@ -21,13 +21,13 @@ import java.util.Set;
 
 public final class TestConditionFactory implements ConditionFactory {
 
-  private final Map<String, Condition> conditions;
+  private final Map<String, Condition<ExperimentState>> conditions;
 
   public TestConditionFactory() {
     this.conditions = Maps.newHashMap();
   }
 
-  public TestConditionFactory put(String name, Condition c) {
+  public TestConditionFactory put(String name, Condition<ExperimentState> c) {
     this.conditions.put(name, c);
     return this;
   }
@@ -38,7 +38,7 @@ public final class TestConditionFactory implements ConditionFactory {
   }
 
   @Override
-  public Condition create(String name) {
+  public Condition<ExperimentState> create(String name) {
     return conditions.get(name);
   }
 }
