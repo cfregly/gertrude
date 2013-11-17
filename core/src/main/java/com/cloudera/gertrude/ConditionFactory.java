@@ -39,5 +39,5 @@ public interface ConditionFactory {
    * @param name a short name used to describe the {@code Condition} instance to create
    * @return a new {@code Condition} instance, or null if the name is unknown
    */
-  Condition<? extends ExperimentState> create(String name);
+  Condition<ExperimentState> create(String name);
 }

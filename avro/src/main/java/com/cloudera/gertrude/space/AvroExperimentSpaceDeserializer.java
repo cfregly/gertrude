@@ -238,7 +238,7 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
                      ExperimentSpaceBuilder builder) throws ValidationException {
     // Needs to be checked against existing bucket ranges
     SortedSet<Integer> buckets = getBuckets(exptDef.getBuckets(), exptDef.getBucketRanges());
-    Condition condition = getCondition(exptDef.getConditions(), exptDef.getConditionMergeOperator());
+    Condition<ExperimentState> condition = getCondition(exptDef.getConditions(), exptDef.getConditionMergeOperator());
     SegmentInfo info = new SegmentInfo(exptDef.getId(), exptDef.getLayerId(), exptDef.getDiversionId(),
         buckets, condition);
     Map<String, FlagValueOverride<Object>> overrides = getOverrides(exptDef.getOverrides(),
@@ -332,7 +332,8 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
         List<Modifier<T>> mods = definition.getModifiers() != null ?
             getModifiers(definition.getModifiers(), parser) :
             ImmutableList.<Modifier<T>>of();
-        Condition condition = getCondition(definition.getConditions(), definition.getConditionMergeOperator());
+        Condition<ExperimentState> condition =
+            getCondition(definition.getConditions(), definition.getConditionMergeOperator());
         modifiers.add(new BasicModifier<T>(
             parser.parse(definition.getValue()),
             getOperatorFunction(definition.getOperator(), parser),
@@ -343,7 +344,7 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
     }
   }
 
-  protected Condition getCondition(List<ConditionDefinition> definitions, ConditionOperator operator)
+  protected Condition<ExperimentState> getCondition(List<ConditionDefinition> definitions, ConditionOperator operator)
       throws ValidationException {
     if (definitions == null || definitions.isEmpty()) {
       return Condition.TRUE;
@@ -356,7 +357,7 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
             return in.toString();
           }
         });
-        Condition c = getConditionFactory().create(definition.getName().toString());
+        Condition<ExperimentState> c = getConditionFactory().create(definition.getName().toString());
         if (c != null) {
           try {
             c.initialize(args);

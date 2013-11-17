@@ -35,7 +35,7 @@ public final class BooleanConditionsTest {
 
   @Test
   public void testOr() throws Exception {
-    Condition c = BooleanConditions.or(ImmutableList.of(Condition.TRUE, Condition.FALSE));
+    Condition<ExperimentState> c = BooleanConditions.or(ImmutableList.of(Condition.TRUE, Condition.FALSE));
     assertTrue(c.evaluate(state));
     assertEquals(Condition.CacheLevel.RELOAD, c.getCacheLevel());
   }
@@ -43,7 +43,7 @@ public final class BooleanConditionsTest {
 
   @Test
   public void testAnd() throws Exception {
-    Condition c = BooleanConditions.and(ImmutableList.of(Condition.TRUE, Condition.FALSE));
+    Condition<ExperimentState> c = BooleanConditions.and(ImmutableList.of(Condition.TRUE, Condition.FALSE));
     assertFalse(c.evaluate(state));
     assertEquals(Condition.CacheLevel.RELOAD, c.getCacheLevel());
   }

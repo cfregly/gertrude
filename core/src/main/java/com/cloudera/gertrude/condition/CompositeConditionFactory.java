@@ -47,7 +47,7 @@ public final class CompositeConditionFactory implements ConditionFactory {
   }
 
   @Override
-  public Condition<? extends ExperimentState> create(String name) {
+  public Condition<ExperimentState> create(String name) {
     return factories.get(name).create(name);
   }
 }

@@ -30,12 +30,12 @@ public final class TestCondition<S extends ExperimentState> implements Condition
     this.cacheLevel = cacheLevel;
   }
 
-  public TestCondition setResult(boolean result) {
+  public TestCondition<?> setResult(boolean result) {
     this.result = result;
     return this;
   }
 
-  public TestCondition setCacheLevel(CacheLevel cacheLevel) {
+  public TestCondition<?> setCacheLevel(CacheLevel cacheLevel) {
     this.cacheLevel = cacheLevel;
     return this;
   }

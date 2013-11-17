@@ -43,7 +43,7 @@ public final class BooleanConditions {
     private AndCondition(List<Condition<S>> conditions) {
       this.conditions = conditions;
       CacheLevel cl = CacheLevel.RELOAD;
-      for (Condition f : conditions) {
+      for (Condition<?> f : conditions) {
         cl = cl.merge(f.getCacheLevel());
       }
       this.cacheLevel = cl;
@@ -77,7 +77,7 @@ public final class BooleanConditions {
     private OrCondition(List<Condition<S>> functions) {
       this.conditions = functions;
       CacheLevel cl = CacheLevel.RELOAD;
-      for (Condition f : functions) {
+      for (Condition<?> f : functions) {
         cl = cl.merge(f.getCacheLevel());
       }
       this.cacheLevel = cl;

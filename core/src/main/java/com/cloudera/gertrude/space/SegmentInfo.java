@@ -24,13 +24,17 @@ public final class SegmentInfo {
   private final int layerId;
   private final int diversionId;
   private final SortedSet<Integer> buckets;
-  private final Condition condition;
+  private final Condition<ExperimentState> condition;
 
   public SegmentInfo(int id, int layerId, int diversionId, SortedSet<Integer> buckets) {
     this(id, layerId, diversionId, buckets, Condition.TRUE);
   }
 
-  public SegmentInfo(int id, int layerId, int diversionId, SortedSet<Integer> buckets, Condition condition) {
+  public SegmentInfo(int id,
+                     int layerId,
+                     int diversionId,
+                     SortedSet<Integer> buckets,
+                     Condition<ExperimentState> condition) {
     this.id = id;
     this.layerId = layerId;
     this.diversionId = diversionId;

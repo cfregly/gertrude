@@ -47,7 +47,7 @@ public class ConditionFactorySupport {
     if (conditionsFile == null) {
       return new DeployConditionFactory();
     }
-    Map<String, Condition> conditions = Maps.newHashMap();
+    Map<String, Condition<ExperimentState>> conditions = Maps.newHashMap();
     for (String line : Files.readLines(new File(conditionsFile), Charsets.UTF_8)) {
       String[] pieces = line.split(",");
       if (pieces.length == 0) {
@@ -72,14 +72,14 @@ public class ConditionFactorySupport {
 
   private static class DeployConditionFactory implements ConditionFactory {
 
-    private final Map<String, Condition> conditions;
+    private final Map<String, Condition<ExperimentState>> conditions;
     private final boolean strict;
 
     public DeployConditionFactory() {
-      this(Maps.<String, Condition>newHashMap());
+      this(Maps.<String, Condition<ExperimentState>>newHashMap());
     }
 
-    public DeployConditionFactory(Map<String, Condition> conditions) {
+    public DeployConditionFactory(Map<String, Condition<ExperimentState>> conditions) {
       this.conditions = conditions;
       this.strict = !conditions.isEmpty();
     }
@@ -90,7 +90,7 @@ public class ConditionFactorySupport {
     }
 
     @Override
-    public Condition<? extends ExperimentState> create(String name) {
+    public Condition<ExperimentState> create(String name) {
       if (!conditions.containsKey(name)) {
         if (strict) {
           return null;

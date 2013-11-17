@@ -28,7 +28,7 @@ import static org.junit.Assert.*;
 
 public class ConditionsTest {
 
-  static class TestPropertyCondition extends AbstractPropertyCondition<String, ExperimentState> {
+  public static class TestPropertyCondition extends AbstractPropertyCondition<String, ExperimentState> {
     private String value;
 
     public void setValue(String value) {
@@ -55,7 +55,7 @@ public class ConditionsTest {
   public void testReflectConditionFactory() {
     ReflectionConditionFactory rcf = new ReflectionConditionFactory();
     rcf.register("test", TestPropertyCondition.class);
-    Condition c = rcf.create("test");
+    Condition<ExperimentState> c = rcf.create("test");
     c.initialize(ImmutableList.of("foo", "bar"));
     assertTrue(c instanceof TestPropertyCondition);
     ((TestPropertyCondition) c).setValue("foo");
