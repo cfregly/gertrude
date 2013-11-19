@@ -78,6 +78,10 @@ public final class AvroDataUtils {
         .setOverrides(null)
         .setBucketRanges(null)
         .setBuckets(Lists.newArrayList(info.getBuckets()))
+        .setStartTimeMsecUtc(info.getStartTimeMsec())
+        .setEndTimeMsecUtc(info.getEndTimeMsec())
+        .setPrePeriodMsecUtc(info.getPrePeriodTimeMsec())
+        .setPostPeriodMsecUtc(info.getPostPeriodTimeMsec())
         .build();
   }
 
@@ -96,6 +100,10 @@ public final class AvroDataUtils {
         .setOverrides(Arrays.asList(overrides))
         .setBucketRanges(null)
         .setBuckets(Lists.newArrayList(info.getBuckets()))
+        .setStartTimeMsecUtc(info.getStartTimeMsec())
+        .setEndTimeMsecUtc(info.getEndTimeMsec())
+        .setPrePeriodMsecUtc(info.getPrePeriodTimeMsec())
+        .setPostPeriodMsecUtc(info.getPostPeriodTimeMsec())
         .build();
   }
 

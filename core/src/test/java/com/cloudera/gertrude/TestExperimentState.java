@@ -27,6 +27,7 @@ public final class TestExperimentState extends AbstractExperimentState {
   private final Map<ExperimentFlag<?>, Object> testValues = Maps.newHashMap();
   private final Set<Integer> forceIds = Sets.newHashSet();
   private final Map<Integer, String> diversionIds = Maps.newHashMap();
+  private Long requestTimeMsec;
 
   @Override
   public Optional<String> getDiversionIdentifier(int diversionId) {
@@ -60,5 +61,15 @@ public final class TestExperimentState extends AbstractExperimentState {
   public <T> TestExperimentState set(ExperimentFlag<T> flag, T value) {
     testValues.put(flag, value);
     return this;
+  }
+
+  public TestExperimentState setRequestTimeMsec(Long requestTimeMsec) {
+    this.requestTimeMsec = requestTimeMsec;
+    return this;
+  }
+
+  @Override
+  public long getRequestTimeMsec() {
+    return requestTimeMsec == null ? super.getRequestTimeMsec() : requestTimeMsec;
   }
 }

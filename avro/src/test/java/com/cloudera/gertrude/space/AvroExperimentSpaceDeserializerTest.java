@@ -14,6 +14,7 @@
  */
 package com.cloudera.gertrude.space;
 
+import com.cloudera.gertrude.Condition;
 import com.cloudera.gertrude.ExperimentFlag;
 import com.cloudera.gertrude.Experiments;
 import com.cloudera.gertrude.TestExperimentState;
@@ -106,6 +107,77 @@ public final class AvroExperimentSpaceDeserializerTest {
     TestExperimentState state = new TestExperimentState().setDiversionIdentifier(0, "cookie");
     TestExperiments.getHandler().handle(state);
     assertEquals(ImmutableSet.of(10), state.getExperimentIds());
+  }
+
+
+  @Test
+  public void testStartAndEndTimes() throws Exception {
+    int numBuckets = 100;
+    SortedSet<Integer> buckets = ImmutableSortedSet.of(82);
+    SegmentInfo s1 = new SegmentInfo(10, 1, 0, buckets, Condition.TRUE, 50L, 100L, 50L, 100L);
+    ExperimentDeployment deployment = ExperimentDeployment.newBuilder()
+        .setDiversions(ImmutableList.of(divDef(0, numBuckets, false)))
+        .setFlagDefinitions(flagDefs)
+        .setLayers(ImmutableList.of(layerDef(1, 0, false, 1)))
+        .setExperiments(ImmutableList.of(exptDef(s1, 10)))
+        .build();
+    TestExperiments.setExperimentSpace(aedp.load(deployment, ""));
+
+    // Test experiment assignment
+    TestExperimentState state = new TestExperimentState()
+        .setDiversionIdentifier(0, "cookie");
+    TestExperiments.getHandler().handle(state);
+    assertEquals(ImmutableSet.of(1), state.getExperimentIds()); // unbiased identifier
+
+    state = new TestExperimentState()
+        .setDiversionIdentifier(0, "cookie")
+        .setRequestTimeMsec(80L);
+    TestExperiments.getHandler().handle(state);
+    assertEquals(ImmutableSet.of(10), state.getExperimentIds()); // valid diversion
+
+
+    state = new TestExperimentState()
+        .setDiversionIdentifier(0, "cookie")
+        .setRequestTimeMsec(120L);
+    TestExperiments.getHandler().handle(state);
+    assertEquals(ImmutableSet.of(1), state.getExperimentIds()); // unbiased identifier
+  }
+
+  @Test
+  public void testPrePeriodPostPeriod() throws Exception {
+    int numBuckets = 100;
+    SortedSet<Integer> buckets = ImmutableSortedSet.of(82);
+    SegmentInfo s1 = new SegmentInfo(10, 1, 0, buckets, Condition.TRUE, 0L, 100L, 20L, 60L);
+    OverrideDefinition o1 = replaceDef("foo", "29");
+    ExperimentDeployment deployment = ExperimentDeployment.newBuilder()
+        .setDiversions(ImmutableList.of(divDef(0, numBuckets, false)))
+        .setFlagDefinitions(flagDefs)
+        .setLayers(ImmutableList.of(layerDef(1, 0, false, 1)))
+        .setExperiments(ImmutableList.of(exptDef(s1, 10, o1)))
+        .build();
+    TestExperiments.setExperimentSpace(aedp.load(deployment, ""));
+
+    // Test experiment assignment
+    TestExperimentState state = new TestExperimentState()
+        .setDiversionIdentifier(0, "cookie")
+        .setRequestTimeMsec(10L);
+    TestExperiments.getHandler().handle(state);
+    assertEquals(ImmutableSet.of(10), state.getExperimentIds()); // preperiod
+    assertEquals(17, state.getInt(foo));
+
+    state = new TestExperimentState()
+        .setDiversionIdentifier(0, "cookie")
+        .setRequestTimeMsec(50L);
+    TestExperiments.getHandler().handle(state);
+    assertEquals(ImmutableSet.of(10), state.getExperimentIds()); // active experiment
+    assertEquals(29, state.getInt(foo));
+
+    state = new TestExperimentState()
+        .setDiversionIdentifier(0, "cookie")
+        .setRequestTimeMsec(80L);
+    TestExperiments.getHandler().handle(state);
+    assertEquals(ImmutableSet.of(10), state.getExperimentIds()); // postperiod
+    assertEquals(17, state.getInt(foo));
   }
 
   @Test

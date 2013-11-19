@@ -61,6 +61,16 @@ public final class ExperimentInfo implements Segment {
   }
 
   @Override
+  public long getStartTimeMsec() {
+    return info.getStartTimeMsec();
+  }
+
+  @Override
+  public long getEndTimeMsec() {
+    return info.getEndTimeMsec();
+  }
+
+  @Override
   public boolean isValidFor(ExperimentState state) {
     return info.isValidFor(state);
   }
@@ -71,8 +81,10 @@ public final class ExperimentInfo implements Segment {
       List<DiversionCriterion> diversionCriteria,
       Map<String, FlagValueCalculator<Object>> overrides,
       Set<Integer> newExperimentIds) {
-    overrides.putAll(getOverrides(newExperimentIds));
     newExperimentIds.add(getId());
+    if (info.overridesEnabled(state.getRequestTimeMsec())) { // check pre-period/post-period
+      overrides.putAll(getOverrides(newExperimentIds));
+    }
   }
 
 

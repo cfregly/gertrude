@@ -50,6 +50,16 @@ public final class Domain implements Segment {
   }
 
   @Override
+  public long getStartTimeMsec() {
+    return info.getStartTimeMsec();
+  }
+
+  @Override
+  public long getEndTimeMsec() {
+    return info.getEndTimeMsec();
+  }
+
+  @Override
   public boolean isValidFor(ExperimentState state) {
     return info.isValidFor(state);
   }

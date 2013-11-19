@@ -91,7 +91,8 @@ public final class LayerImpl implements Layer {
         }
       }
       if (bucket != -1) {
-        Set<Segment> selected = findSegments(segmentsByDiversionBuckets.get(criteria.getId()), bucket);
+        Set<Segment> selected = findSegments(segmentsByDiversionBuckets.get(criteria.getId()), bucket,
+            state.getRequestTimeMsec());
         if (!selected.isEmpty()) {
           Set<Segment> valid = Sets.filter(selected, new Predicate<Segment>() {
             @Override
@@ -121,14 +122,18 @@ public final class LayerImpl implements Layer {
     newExperimentIds.add(info.getUnbiasedId());
   }
 
-  static Set<Segment> findSegments(NavigableMap<Integer, Set<Segment>> segments, final int bucket) {
+  static Set<Segment> findSegments(
+      NavigableMap<Integer, Set<Segment>> segments,
+      final int bucket,
+      final long timeMsec) {
     if (segments != null && bucket >= 0) {
       Map.Entry<Integer, Set<Segment>> e = segments.floorEntry(bucket);
       if (e != null) {
         return Sets.filter(e.getValue(), new Predicate<Segment>() {
           @Override
           public boolean apply(Segment segment) {
-            return segment.getBuckets().contains(bucket);
+            return segment.getBuckets().contains(bucket) && segment.getStartTimeMsec() <= timeMsec &&
+                timeMsec < segment.getEndTimeMsec();
           }
         });
       }

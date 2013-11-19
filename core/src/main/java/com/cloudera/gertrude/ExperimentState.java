@@ -113,4 +113,11 @@ public interface ExperimentState {
    */
   boolean isDiverted();
 
+  /**
+   * Returns the time that this {@code ExperimentState} instance was created in milliseconds. Used for
+   * determining whether a particular experiment should be active or inactive for this request.
+   *
+   * @return the time that this object was created in milliseconds
+   */
+  long getRequestTimeMsec();
 }

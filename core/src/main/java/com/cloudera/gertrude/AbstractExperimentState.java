@@ -33,6 +33,7 @@ public abstract class AbstractExperimentState implements ExperimentState {
 
   private final Map<ExperimentFlag<?>, Object> valueCache = Maps.newHashMap();
   private final Set<Integer> experimentIds = Sets.newHashSet();
+  private final long requestTimeMsec = System.currentTimeMillis();
 
   private ExperimentFlagSettings flagSettings;
 
@@ -77,6 +78,11 @@ public abstract class AbstractExperimentState implements ExperimentState {
   @Override
   public boolean isDiverted() {
     return flagSettings != null;
+  }
+
+  @Override
+  public long getRequestTimeMsec() {
+    return requestTimeMsec;
   }
 
   void setFlagSettings(ExperimentFlagSettings flagSettings) {

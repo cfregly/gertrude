@@ -239,11 +239,37 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
     // Needs to be checked against existing bucket ranges
     SortedSet<Integer> buckets = getBuckets(exptDef.getBuckets(), exptDef.getBucketRanges());
     Condition<ExperimentState> condition = getCondition(exptDef.getConditions(), exptDef.getConditionMergeOperator());
+    long startTimeMsec = getTime(exptDef.getStartTimeMsecUtc(), 0);
+    long endTimeMsec = getTime(exptDef.getEndTimeMsecUtc(), Long.MAX_VALUE);
+    long prePeriodTimeMsec = getTime(exptDef.getPrePeriodMsecUtc(), startTimeMsec);
+    long postPeriodTimeMsec = getTime(exptDef.getPostPeriodMsecUtc(), endTimeMsec);
+    validateTimes(startTimeMsec, endTimeMsec, prePeriodTimeMsec, postPeriodTimeMsec);
     SegmentInfo info = new SegmentInfo(exptDef.getId(), exptDef.getLayerId(), exptDef.getDiversionId(),
-        buckets, condition);
+        buckets, condition, startTimeMsec, endTimeMsec, prePeriodTimeMsec, postPeriodTimeMsec);
     Map<String, FlagValueOverride<Object>> overrides = getOverrides(exptDef.getOverrides(),
         parsers, exptDef.getId());
     builder.addExperimentInfo(info, exptDef.getDomain(), overrides);
+  }
+
+  private void validateTimes(
+      long startTimeMsec,
+      long endTimeMsec,
+      long prePeriodTimeMsec,
+      long postPeriodTimeMsec) throws ValidationException {
+    if (startTimeMsec > endTimeMsec) {
+      throw new ValidationException(String.format("Start time (%d) begins after end time (%d)",
+          startTimeMsec, endTimeMsec));
+    } else if (prePeriodTimeMsec < startTimeMsec) {
+      throw new ValidationException(String.format("Pre-period (%d) ends before start time (%d)",
+          prePeriodTimeMsec, startTimeMsec));
+    } else if (endTimeMsec < postPeriodTimeMsec) {
+      throw new ValidationException(String.format("Post-period (%d) starts after end time (%d)",
+          postPeriodTimeMsec, endTimeMsec));
+    }
+  }
+
+  private long getTime(Long value, long defaultValue) {
+    return value == null ? defaultValue : value;
   }
 
   static FlagTypeParser<?> getParser(FlagType flagType) throws ValidationException {

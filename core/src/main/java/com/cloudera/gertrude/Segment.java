@@ -54,6 +54,20 @@ public interface Segment {
   SortedSet<Integer> getBuckets();
 
   /**
+   * Returns the time in milliseconds UTC that this segment starts diverting requests.
+   *
+   * @return the time in milliseconds UTC when request diversion begins
+   */
+  long getStartTimeMsec();
+
+  /**
+   * Returns the time in milliseconds UTC that this segment stops diverting requests.
+   *
+   * @return the time in milliseconds UTC when request diversion ends
+   */
+  long getEndTimeMsec();
+
+  /**
    * Returns true if the given {@code ExperimentState} satisfies the {@link Condition} instances associated with
    * this {@code Segment}.
    *

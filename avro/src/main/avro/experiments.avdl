@@ -147,6 +147,22 @@ protocol Experiments {
     // allocated to this experiment.
     union{array<int>, null} buckets;
     union{array<BucketRange>, null} bucket_ranges;
+
+    // Specifies the start and end times for this experiment in milliseconds UTC. Requests can
+    // only be diverted into this experiment if they begin after start_time_msec_utc and before
+    // end_time_msec_utc. If these times are not specified, the experiment will run indefinitely.
+    union{long, null} start_time_msec_utc;
+    union{long, null} end_time_msec_utc;
+    
+    // Specifies a pre period for this experiment. During the period between start_time_msec_utc
+    // and pre_period_msec_utc, requests that are diverted into this experiment will NOT have
+    // the flag overrides for this experiment applied to them.
+    union{long, null} pre_period_msec_utc;
+
+    // Specifies a post-period for this experiment. During the period between post_period_msec_utc
+    // and end_time_msec_utc, requests that are diverted into this experiment will not have the
+    // flag overrides for this experiment applied to them.
+    union{long, null} post_period_msec_utc;
   }
 
   record DiversionDefinition {

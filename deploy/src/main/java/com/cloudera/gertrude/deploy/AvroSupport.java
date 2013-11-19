@@ -16,8 +16,6 @@ package com.cloudera.gertrude.deploy;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParametersDelegate;
-import com.cloudera.gertrude.ExperimentFlag;
-import com.cloudera.gertrude.condition.ReflectionConditionFactory;
 import com.cloudera.gertrude.experiments.avro.BucketRange;
 import com.cloudera.gertrude.experiments.avro.ConditionDefinition;
 import com.cloudera.gertrude.experiments.avro.ConditionOperator;
@@ -34,7 +32,6 @@ import com.cloudera.gertrude.experiments.avro.OverrideOperator;
 import com.cloudera.gertrude.space.AvroExperimentSpaceDeserializer;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
 import org.apache.avro.file.DataFileWriter;
@@ -42,18 +39,22 @@ import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumWriter;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 public class AvroSupport {
 
   @Parameter(names = "--skip-validation", description = "Skip validation checks on input config files.")
   private boolean skipValidation = false;
+
+  @Parameter(names = "--timezone-id", description = "ID of the defaullt timezone to use for parsing datetime values")
+  private String timeZoneId = DateTimeZone.getDefault().getID();
 
   @ParametersDelegate
   private ConditionFactorySupport conditionFactorySupport = new ConditionFactorySupport();
@@ -73,6 +74,7 @@ public class AvroSupport {
     this.skipValidation = skipValidation;
     this.conditionFactorySupport = conditionFactorySupport;
     this.experimentFlagSupport = experimentFlagSupport;
+    DateTimeZone.setDefault(DateTimeZone.forID(timeZoneId));
   }
 
   public byte[] toBytes(ExperimentDeployment deployment) throws Exception {
@@ -207,10 +209,22 @@ public class AvroSupport {
             .setDomain((input.hasPath("domain") && input.getBoolean("domain")) || isDomain)
             .setBuckets(input.hasPath("buckets") ? input.getIntList("buckets") : ImmutableList.<Integer>of())
             .setBucketRanges(getBucketRanges(getConfigList(input, "bucket-ranges", false)))
+            .setStartTimeMsecUtc(getTime(input, "start-time"))
+            .setEndTimeMsecUtc(getTime(input, "end-time"))
+            .setPrePeriodMsecUtc(getTime(input, "preperiod-time"))
+            .setPostPeriodMsecUtc(getTime(input, "postperiod-time"))
             .setOverrides(getOverrides(getConfigList(input, "overrides", false)))
             .build();
       }
     });
+  }
+
+  private Long getTime(Config config, String path) {
+    if (!config.hasPath(path)) {
+      return null;
+    } else {
+      return new DateTime(config.getString(path)).getMillis();
+    }
   }
 
   private List<BucketRange> getBucketRanges(List<? extends Config> bucketRangeConfig) {

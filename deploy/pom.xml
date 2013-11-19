@@ -63,6 +63,11 @@
     </dependency>
 
     <dependency>
+      <groupId>joda-time</groupId>
+      <artifactId>joda-time</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>com.cloudera.gertrude</groupId>
       <artifactId>gertrude-core</artifactId>
       <type>test-jar</type>
