@@ -88,6 +88,16 @@ public final class ExperimentHandler {
   }
 
   /**
+   * Disables the experiment with the given id, preventing it from diverting any traffic.
+   *
+   * @param experimentId id of the experiment to disable
+   * @return true if the experiment was found and disabled, false otherwise
+   */
+  public boolean disable(int experimentId) {
+    return experimentSpace.disable(experimentId);
+  }
+
+  /**
    * Returns the version string for the {@code ExperimentSpace} that is currently being used
    * by this instance to handle requests.
    *

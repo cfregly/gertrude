@@ -35,6 +35,7 @@ public final class ExperimentInfo implements Segment {
   private final SegmentInfo info;
   private final Map<String, FlagValueCalculatorImpl<Object>> baseOverrides;
   private final Map<Integer, Map<String, FlagValueCalculatorImpl<Object>>> launchOverrides;
+  private boolean disabled;
 
   public ExperimentInfo(
       SegmentInfo info,
@@ -43,6 +44,7 @@ public final class ExperimentInfo implements Segment {
     this.info = info;
     this.baseOverrides = baseOverrides;
     this.launchOverrides = launchOverrides;
+    this.disabled = false;
   }
 
   @Override
@@ -69,6 +71,17 @@ public final class ExperimentInfo implements Segment {
   public long getEndTimeMsec() {
     return info.getEndTimeMsec();
   }
+
+  @Override
+  public boolean isEnabled(long requestTimeMsec) {
+    return !disabled && getStartTimeMsec() < requestTimeMsec && requestTimeMsec < getEndTimeMsec();
+  }
+
+  @Override
+  public void disable() {
+    this.disabled = true;
+  }
+
 
   @Override
   public boolean isValidFor(ExperimentState state) {

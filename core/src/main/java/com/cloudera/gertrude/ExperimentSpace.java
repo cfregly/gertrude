@@ -109,6 +109,15 @@ public final class ExperimentSpace {
     return versionIdentifier;
   }
 
+  boolean disable(int experimentId) {
+    Segment s = allSegments.get(experimentId);
+    if (s != null) {
+      s.disable();
+      return true;
+    }
+    return false;
+  }
+
   void diversion(AbstractExperimentState state, Set<Integer> newExperimentIds) {
     if (state.forceExperimentIds().isEmpty()) {
       randomDiversion(state, newExperimentIds);

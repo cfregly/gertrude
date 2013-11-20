@@ -109,6 +109,25 @@ public final class AvroExperimentSpaceDeserializerTest {
     assertEquals(ImmutableSet.of(10), state.getExperimentIds());
   }
 
+  @Test
+  public void testDisabled() throws Exception {
+    int numBuckets = 100;
+    SortedSet<Integer> buckets = ImmutableSortedSet.of(82);
+    SegmentInfo s1 = new SegmentInfo(10, 1, 0, buckets);
+    ExperimentDeployment deployment = ExperimentDeployment.newBuilder()
+        .setDiversions(ImmutableList.of(divDef(0, numBuckets, false)))
+        .setFlagDefinitions(flagDefs)
+        .setLayers(ImmutableList.of(layerDef(1, 0, false, 1)))
+        .setExperiments(ImmutableList.of(exptDef(s1, 10)))
+        .build();
+    TestExperiments.setExperimentSpace(aedp.load(deployment, ""));
+
+    // Test experiment assignment
+    TestExperimentState state = new TestExperimentState().setDiversionIdentifier(0, "cookie");
+    TestExperiments.getHandler().disable(10);
+    TestExperiments.getHandler().handle(state);
+    assertEquals(ImmutableSet.of(1), state.getExperimentIds());
+  }
 
   @Test
   public void testStartAndEndTimes() throws Exception {

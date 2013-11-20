@@ -68,6 +68,19 @@ public interface Segment {
   long getEndTimeMsec();
 
   /**
+   * Returns true if this instance is enabled and capable of diverting requests at the given time.
+   *
+   * @param requestTimeMsec the time of this request in milliseconds
+   * @return whether or not this segment is enabled for diversion
+   */
+  boolean isEnabled(long requestTimeMsec);
+
+  /**
+   * Turn off this segment, preventing it from diverting requests.
+   */
+  void disable();
+
+  /**
    * Returns true if the given {@code ExperimentState} satisfies the {@link Condition} instances associated with
    * this {@code Segment}.
    *

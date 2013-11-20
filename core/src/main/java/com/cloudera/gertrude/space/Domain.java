@@ -28,10 +28,12 @@ import java.util.SortedSet;
 public final class Domain implements Segment {
   private final SegmentInfo info;
   private final Set<Layer> layers;
+  private boolean disabled;
 
   public Domain(SegmentInfo info, Set<Layer> layers) {
     this.info = info;
     this.layers = layers;
+    this.disabled = false;
   }
 
   @Override
@@ -57,6 +59,16 @@ public final class Domain implements Segment {
   @Override
   public long getEndTimeMsec() {
     return info.getEndTimeMsec();
+  }
+
+  @Override
+  public boolean isEnabled(long requestTimeMsec) {
+    return !disabled && getStartTimeMsec() < requestTimeMsec && requestTimeMsec < getEndTimeMsec();
+  }
+
+  @Override
+  public void disable() {
+    this.disabled = true;
   }
 
   @Override

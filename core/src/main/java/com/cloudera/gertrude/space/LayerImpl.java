@@ -132,8 +132,7 @@ public final class LayerImpl implements Layer {
         return Sets.filter(e.getValue(), new Predicate<Segment>() {
           @Override
           public boolean apply(Segment segment) {
-            return segment.getBuckets().contains(bucket) && segment.getStartTimeMsec() <= timeMsec &&
-                timeMsec < segment.getEndTimeMsec();
+            return segment.getBuckets().contains(bucket) && segment.isEnabled(timeMsec);
           }
         });
       }
