@@ -50,7 +50,7 @@ public class FileExperimentSpaceLoaderTest {
 
     byte[] data2 = "otherSerializedExperimentData".getBytes();
     Files.write(data2, tmpFile);
-    Thread.sleep(2000L);
+    Thread.sleep(5000L);
 
     serData = loader.getSerialized();
     assertEquals(1, serData.get().getSerializedData().size());
