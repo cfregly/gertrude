@@ -24,6 +24,9 @@ public final class TestExperiments {
   private static ConditionFactory conditionFactory = new TestConditionFactory();
   private static MetricRegistry metrics = new MetricRegistry();
 
+  private TestExperiments() {
+  }
+
   public static void setLoader(ExperimentSpaceLoader l) {
     loader = l;
   }

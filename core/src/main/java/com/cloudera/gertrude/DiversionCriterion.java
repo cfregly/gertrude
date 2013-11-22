@@ -80,21 +80,27 @@ public final class DiversionCriterion implements Comparable<DiversionCriterion> 
 
   @Override
   public int compareTo(DiversionCriterion other) {
-    return id - other.id;
+    if (id < other.id) {
+      return -1;
+    }
+    if (id > other.id) {
+      return 1;
+    }
+    return 0;
   }
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
     DiversionCriterion that = (DiversionCriterion) o;
 
-    if (id != that.id) return false;
-    if (numBuckets != that.numBuckets) return false;
-    if (random != that.random) return false;
-
-    return true;
+    return id == that.id && numBuckets == that.numBuckets && random == that.random;
   }
 
   @Override

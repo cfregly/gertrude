@@ -62,14 +62,8 @@ public final class FlagValue<T> {
 
     FlagValue<T> that = (FlagValue<T>) o;
 
-    if (cacheLevel != that.cacheLevel) {
-      return false;
-    }
-    if (value != null ? !value.equals(that.value) : that.value != null) {
-      return false;
-    }
-
-    return true;
+    return cacheLevel == that.cacheLevel &&
+        (value == null ? that.value == null : value.equals(that.value));
   }
 
   @Override
@@ -81,6 +75,6 @@ public final class FlagValue<T> {
 
   @Override
   public String toString() {
-    return new StringBuilder(value.toString()).append("(").append(cacheLevel).append(")").toString();
+    return new StringBuilder(value.toString()).append('(').append(cacheLevel).append(')').toString();
   }
 }

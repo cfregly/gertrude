@@ -27,16 +27,17 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
- *  A simple servlet {@link Filter} for intercepting the current request, creating an associated
+ *  A simple servlet {@link javax.servlet.Filter} for intercepting the current request, creating an associated
  *  {@link HttpServletExperimentStateImpl}, and diverting the request into one or more experiments using
- *  a pre-configured {@link ExperimentHandler}.
+ *  a pre-configured {@link com.cloudera.gertrude.ExperimentHandler}.
  */
 public class GertrudeFilter implements Filter {
 
   private static final String DIVERSION_COOKIES_PARAM = "gertrude-diversion-cookies";
-  private static final String DIVERSION_COOKIES_SEP = ",";
+  private static final Pattern DIVERSION_COOKIES_SEP = Pattern.compile(",");
 
   private ExperimentHandler handler;
   private List<String> diversionCookies;
@@ -44,10 +45,10 @@ public class GertrudeFilter implements Filter {
   @Override
   public void init(FilterConfig filterConfig) throws ServletException {
     String divCookiesStr = filterConfig.getInitParameter(DIVERSION_COOKIES_PARAM);
-    if (divCookiesStr == null | divCookiesStr.isEmpty()) {
+    if (divCookiesStr == null || divCookiesStr.isEmpty()) {
       diversionCookies = ImmutableList.of();
     } else {
-      diversionCookies = ImmutableList.copyOf(divCookiesStr.split(DIVERSION_COOKIES_SEP));
+      diversionCookies = ImmutableList.copyOf(DIVERSION_COOKIES_SEP.split(divCookiesStr));
     }
     filterConfig.getServletContext().log("Gertrude diversion cookies: " + diversionCookies);
 

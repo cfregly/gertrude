@@ -53,14 +53,8 @@ public final class FlagValueCalculatorImpl<T> implements FlagValueCalculator<T> 
 
     FlagValueCalculatorImpl<T> that = (FlagValueCalculatorImpl<T>) o;
 
-    if (baseValue != null ? !baseValue.equals(that.baseValue) : that.baseValue != null) {
-      return false;
-    }
-    if (modifiers != null ? !modifiers.equals(that.modifiers) : that.modifiers != null) {
-      return false;
-    }
-
-    return true;
+    return (baseValue == null ? that.baseValue == null : baseValue.equals(that.baseValue)) &&
+        (modifiers == null ? that.modifiers == null : modifiers.equals(that.modifiers));
   }
 
   @Override

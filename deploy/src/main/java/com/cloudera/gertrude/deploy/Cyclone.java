@@ -21,10 +21,14 @@ import com.beust.jcommander.ParametersDelegate;
 import com.cloudera.gertrude.experiments.avro.ExperimentDeployment;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
 public class Cyclone {
+
+  private static final Logger log = LoggerFactory.getLogger(Cyclone.class);
 
   @Parameter(names = "--input", description="The input config file to parse, in either JSON or HOCON format.",
       required=true)
@@ -58,7 +62,7 @@ public class Cyclone {
     try {
       jc.parse(args);
     } catch (ParameterException e) {
-      System.err.println(e.getLocalizedMessage());
+      log.error(e.getLocalizedMessage());
       jc.usage();
       return 1;
     }
@@ -71,7 +75,7 @@ public class Cyclone {
     Config config = ConfigFactory.parseFileAnySyntax(new File(inputFile));
     ExperimentDeployment deployment = avroSupport.createDeployment(config);
     if (deployment == null) {
-      System.err.println("Could not create valid experiment deployment, exiting...");
+      log.error("Could not create valid experiment deployment, exiting...");
       return 1;
     }
     if (curatorSupport.isEnabled()) {
@@ -83,6 +87,6 @@ public class Cyclone {
   }
 
   public static void main(String[] args) throws Exception {
-    System.exit(new Cyclone().run(args));
+    new Cyclone().run(args);
   }
 }

@@ -17,7 +17,6 @@ package com.cloudera.gertrude.calculate;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
 public abstract class FlagValueOverride<T> implements Function<FlagValueCalculatorImpl<T>, FlagValueCalculatorImpl<T>> {
@@ -25,7 +24,7 @@ public abstract class FlagValueOverride<T> implements Function<FlagValueCalculat
   public static <T> FlagValueOverride<T> createReplace(final T baseValue, final List<Modifier<T>> modifiers) {
     return new FlagValueOverride<T>() {
       @Override
-      public FlagValueCalculatorImpl<T> apply(@Nullable FlagValueCalculatorImpl<T> input) {
+      public FlagValueCalculatorImpl<T> apply(FlagValueCalculatorImpl<T> input) {
         return new FlagValueCalculatorImpl<T>(baseValue, modifiers);
       }
     };
@@ -34,7 +33,7 @@ public abstract class FlagValueOverride<T> implements Function<FlagValueCalculat
   public static <S> FlagValueOverride<S> createAppend(final List<Modifier<S>> newModifiers) {
     return new FlagValueOverride<S>() {
       @Override
-      public FlagValueCalculatorImpl<S> apply(@Nullable FlagValueCalculatorImpl<S> input) {
+      public FlagValueCalculatorImpl<S> apply(FlagValueCalculatorImpl<S> input) {
         return new FlagValueCalculatorImpl<S>(input.getBaseValue(),
             ImmutableList.<Modifier<S>>builder()
                 .addAll(input.getModifiers())
@@ -47,7 +46,7 @@ public abstract class FlagValueOverride<T> implements Function<FlagValueCalculat
   public static <S> FlagValueOverride<S> createPrepend(final List<Modifier<S>> newModifiers) {
     return new FlagValueOverride<S>() {
       @Override
-      public FlagValueCalculatorImpl<S> apply(@Nullable FlagValueCalculatorImpl<S> input) {
+      public FlagValueCalculatorImpl<S> apply(FlagValueCalculatorImpl<S> input) {
         return new FlagValueCalculatorImpl<S>(input.getBaseValue(),
             ImmutableList.<Modifier<S>>builder()
                 .addAll(newModifiers)

@@ -28,10 +28,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class ConditionFactorySupport {
 
   private static final Logger log = LoggerFactory.getLogger(ConditionFactorySupport.class);
+  private static final Pattern COMMA = Pattern.compile(",");
 
   @Parameter(names = "--conditions-file",
       description = "A file containing the names of valid conditions, one per line, used for validation.")
@@ -49,7 +51,7 @@ public class ConditionFactorySupport {
     }
     Map<String, Condition<ExperimentState>> conditions = Maps.newHashMap();
     for (String line : Files.readLines(new File(conditionsFile), Charsets.UTF_8)) {
-      String[] pieces = line.split(",");
+      String[] pieces = COMMA.split(line);
       if (pieces.length == 0) {
         // Ignore
       } else if (pieces.length == 1) {
@@ -75,11 +77,11 @@ public class ConditionFactorySupport {
     private final Map<String, Condition<ExperimentState>> conditions;
     private final boolean strict;
 
-    public DeployConditionFactory() {
+    private DeployConditionFactory() {
       this(Maps.<String, Condition<ExperimentState>>newHashMap());
     }
 
-    public DeployConditionFactory(Map<String, Condition<ExperimentState>> conditions) {
+    private DeployConditionFactory(Map<String, Condition<ExperimentState>> conditions) {
       this.conditions = conditions;
       this.strict = !conditions.isEmpty();
     }

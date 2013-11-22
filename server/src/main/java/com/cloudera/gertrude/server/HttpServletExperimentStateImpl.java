@@ -19,7 +19,6 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
-import javax.servlet.ServletRequest;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -34,7 +33,7 @@ class HttpServletExperimentStateImpl extends AbstractExperimentState implements 
   private final HttpServletRequest request;
   private final Map<Integer, String> diversionCookies;
 
-  public HttpServletExperimentStateImpl(HttpServletRequest request, List<String> diversionCookies) {
+  HttpServletExperimentStateImpl(HttpServletRequest request, List<String> diversionCookies) {
     this.request = Preconditions.checkNotNull(request);
     this.diversionCookies = indexDiversionCookies(diversionCookies, request.getCookies());
   }
@@ -58,6 +57,7 @@ class HttpServletExperimentStateImpl extends AbstractExperimentState implements 
     return Optional.fromNullable(diversionCookies.get(diversionId));
   }
 
+  @Override
   public HttpServletRequest getRequest() {
     return request;
   }

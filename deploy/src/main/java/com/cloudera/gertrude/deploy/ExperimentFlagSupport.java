@@ -25,11 +25,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class ExperimentFlagSupport {
 
   private static final Logger log = LoggerFactory.getLogger(ExperimentFlagSupport.class);
+  private static final Pattern COMMA = Pattern.compile(",");
 
   @Parameter(names = "--flags-file",
       description = "A CSV file of 'flag_name,flag_type' pairs used for validation.")
@@ -47,10 +50,10 @@ public class ExperimentFlagSupport {
     }
     ImmutableMap.Builder<String, ExperimentFlag<?>> b = ImmutableMap.builder();
     for (String line : Files.readLines(new File(experimentFlagFile), Charsets.UTF_8)) {
-      String[] pieces = line.split(",");
+      String[] pieces = COMMA.split(line);
       if (pieces.length == 2) {
         String flagName = pieces[0];
-        String flagType = pieces[1].toLowerCase();
+        String flagType = pieces[1].toLowerCase(Locale.ENGLISH);
         if (flagType.startsWith("bool")) {
           b.put(flagName, Experiments.declare(flagName, false));
         } else if (flagType.startsWith("int") || "long".equals(flagType)) {

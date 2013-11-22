@@ -20,12 +20,21 @@ import java.util.Map;
 
 final class FlagValueData {
 
-  final Map<String, FlagValueCalculatorImpl<Object>> baseOverrides;
-  final Map<Integer, Map<String, FlagValueCalculatorImpl<Object>>> launchOverrides;
+  private final Map<String, FlagValueCalculatorImpl<Object>> baseOverrides;
+  private final Map<Integer, Map<String, FlagValueCalculatorImpl<Object>>> launchOverrides;
 
   FlagValueData(Map<String, FlagValueCalculatorImpl<Object>> baseOverrides,
                 Map<Integer, Map<String, FlagValueCalculatorImpl<Object>>> launchOverrides) {
     this.baseOverrides = baseOverrides;
     this.launchOverrides = launchOverrides;
   }
+
+  Map<String, FlagValueCalculatorImpl<Object>> getBaseOverrides() {
+    return baseOverrides;
+  }
+
+  Map<Integer, Map<String, FlagValueCalculatorImpl<Object>>> getLaunchOverrides() {
+    return launchOverrides;
+  }
+
 }

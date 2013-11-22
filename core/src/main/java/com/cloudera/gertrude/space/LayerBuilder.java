@@ -28,7 +28,6 @@ import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
 
-import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
@@ -115,7 +114,7 @@ final class LayerBuilder {
       for (Integer bucket : conflict) {
         conflictSegments.add(allocatedBuckets.get(bucket));
       }
-      sb.append(conflictSegments).append(" (Buckets: ").append(conflict).append(")");
+      sb.append(conflictSegments).append(" (Buckets: ").append(conflict).append(')');
       throw new ValidationException(sb.toString());
     }
     for (Integer bucket : buckets) {
@@ -126,7 +125,7 @@ final class LayerBuilder {
   private Iterable<ExperimentInfo> findExperimentsThatOverride(String name) {
     return Iterables.transform(flagOverridesByExperiment.get(name), new Function<Integer, ExperimentInfo>() {
       @Override
-      public ExperimentInfo apply(@Nullable Integer experimentId) {
+      public ExperimentInfo apply(Integer experimentId) {
         return experiments.get(experimentId);
       }
     });

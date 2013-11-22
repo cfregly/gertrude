@@ -21,11 +21,11 @@ import java.util.List;
 
 class ArityValidatingCondition implements Condition<ExperimentState> {
 
-  private String name;
-  private int minArgs;
-  private int maxArgs;
+  private final String name;
+  private final int minArgs;
+  private final int maxArgs;
 
-  public ArityValidatingCondition(String name, int minArgs, int maxArgs) {
+  ArityValidatingCondition(String name, int minArgs, int maxArgs) {
     this.name = name;
     this.minArgs = minArgs;
     this.maxArgs = maxArgs;

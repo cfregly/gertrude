@@ -39,8 +39,8 @@ import java.util.Map;
 import java.util.SortedSet;
 
 import static com.cloudera.gertrude.space.AvroDataUtils.*;
-import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public final class AvroExperimentSpaceDeserializerTest {
 
@@ -306,8 +306,8 @@ public final class AvroExperimentSpaceDeserializerTest {
 
   @Test
   public void testTwoLayersWithValidOverrides() throws Exception {
-    int numBuckets = 100;
-    SortedSet<Integer> one = Sets.newTreeSet(), two = Sets.newTreeSet();
+    SortedSet<Integer> one = Sets.newTreeSet();
+    SortedSet<Integer> two = Sets.newTreeSet();
     for (int i = 0; i < 100; i++) {
       if (i % 2 == 0) {
         one.add(i);
@@ -326,6 +326,7 @@ public final class AvroExperimentSpaceDeserializerTest {
     SegmentInfo s2 = new SegmentInfo(200, 3, 0, ImmutableSortedSet.of(77));
     OverrideDefinition o2 = prependDef("foo", mod("2", ModifierOperator.MULTIPLY));
 
+    int numBuckets = 100;
     ExperimentDeployment deployment = ExperimentDeployment.newBuilder()
         .setDiversions(ImmutableList.of(divDef(0, numBuckets, false)))
         .setFlagDefinitions(flagDefs)

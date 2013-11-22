@@ -53,7 +53,7 @@ public final class ExperimentFlagSettings {
     FlagValueCalculator<T> calc = (FlagValueCalculator<T>) entries.get(flag.getName());
     if (calc == null) {
       if (delegate == null) {
-        log.warn("No calculator defined for experiment flag: " + flag);
+        log.warn("No calculator defined for experiment flag: {}", flag);
         return FlagValue.of(flag.getDefaultValue(), Condition.CacheLevel.RELOAD);
       } else {
         return delegate.getValue(flag, state);
@@ -72,15 +72,17 @@ public final class ExperimentFlagSettings {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
     ExperimentFlagSettings that = (ExperimentFlagSettings) o;
 
-    if (delegate != null ? !delegate.equals(that.delegate) : that.delegate != null) return false;
-    if (!entries.equals(that.entries)) return false;
-
-    return true;
+    return (delegate == null ? that.delegate == null : delegate.equals(that.delegate)) &&
+        entries.equals(that.entries);
   }
 
   @Override

@@ -27,9 +27,10 @@ import java.io.IOException;
  * An example of using experiment flags to control response behavior in a servlet.
  */
 public class ExampleServlet extends HttpServlet {
-  static ExperimentFlag<Long> MAX_RESPONSE_LENGTH = Experiments.declare("max_response_length", -1L);
-  static ExperimentFlag<Boolean> SKIP_RESPONSE = Experiments.declare("skip_response", false);
-  static ExperimentFlag<String> RESPONSE_TEXT = Experiments.declare("response_text", "Hello World!");
+
+  private static ExperimentFlag<Long> MAX_RESPONSE_LENGTH = Experiments.declare("max_response_length", -1L);
+  private static ExperimentFlag<Boolean> SKIP_RESPONSE = Experiments.declare("skip_response", false);
+  private static ExperimentFlag<String> RESPONSE_TEXT = Experiments.declare("response_text", "Hello World!");
 
   @Override
   protected void doGet(HttpServletRequest request, HttpServletResponse response)

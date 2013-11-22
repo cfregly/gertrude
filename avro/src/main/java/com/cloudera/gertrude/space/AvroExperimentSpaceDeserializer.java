@@ -388,22 +388,24 @@ public class AvroExperimentSpaceDeserializer extends ExperimentSpaceDeserializer
           try {
             c.initialize(args);
           } catch (Exception e) {
-            throw new ValidationException("Exception initializing condition \"" + definition.getName() + "\"", e);
+            throw new ValidationException("Exception initializing condition \"" + definition.getName() + '"', e);
           }
           if (definition.getNegate() != null && definition.getNegate()) {
             c = BooleanConditions.not(c);
           }
           conditions.add(c);
         } else {
-          throw new ValidationException("Unknown condition function name \"" + definition.getName() + "\"");
+          throw new ValidationException("Unknown condition function name \"" + definition.getName() + '"');
         }
       }
       // May want to cache the c + args mappings to the instances...
       if (conditions.size() == 1) {
         return conditions.get(0);
-      } else if (operator == null || operator == ConditionOperator.AND) {
+      }
+      if (operator == null || operator == ConditionOperator.AND) {
         return BooleanConditions.and(conditions);
-      } else if (operator == ConditionOperator.OR) {
+      }
+      if (operator == ConditionOperator.OR) {
         return BooleanConditions.or(conditions);
       }
       throw new ValidationException("Unknown condition operator: " + operator);

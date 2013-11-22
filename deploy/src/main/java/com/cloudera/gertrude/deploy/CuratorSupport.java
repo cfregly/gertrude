@@ -15,7 +15,6 @@
 package com.cloudera.gertrude.deploy;
 
 import com.beust.jcommander.Parameter;
-import com.cloudera.gertrude.experiments.avro.ExperimentDeployment;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;

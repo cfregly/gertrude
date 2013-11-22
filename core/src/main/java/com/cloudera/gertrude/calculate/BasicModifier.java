@@ -64,17 +64,19 @@ public final class BasicModifier<T> implements Modifier<T> {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
     BasicModifier<?> that = (BasicModifier<?>) o;
 
-    if (!condition.equals(that.condition)) return false;
-    if (!modifiers.equals(that.modifiers)) return false;
-    if (!operator.equals(that.operator)) return false;
-    if (!value.equals(that.value)) return false;
-
-    return true;
+    return condition.equals(that.condition) &&
+        modifiers.equals(that.modifiers) &&
+        operator.equals(that.operator) &&
+        value.equals(that.value);
   }
 
   @Override

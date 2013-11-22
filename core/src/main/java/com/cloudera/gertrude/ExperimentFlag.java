@@ -83,16 +83,18 @@ public final class ExperimentFlag<T> {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
     ExperimentFlag<?> that = (ExperimentFlag<?>) o;
 
-    if (!defaultValue.equals(that.defaultValue)) return false;
-    if (!flagTypeParser.equals(that.flagTypeParser)) return false;
-    if (!name.equals(that.name)) return false;
-
-    return true;
+    return defaultValue.equals(that.defaultValue) &&
+        flagTypeParser.equals(that.flagTypeParser) &&
+        name.equals(that.name);
   }
 
   @Override
@@ -106,7 +108,7 @@ public final class ExperimentFlag<T> {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append(flagTypeParser.toString()).append(" ").append(name).append(" = ").append(defaultValue);
+    sb.append(flagTypeParser.toString()).append(' ').append(name).append(" = ").append(defaultValue);
     return sb.toString();
   } 
 }

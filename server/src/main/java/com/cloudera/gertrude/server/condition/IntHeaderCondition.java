@@ -20,7 +20,6 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
 
@@ -43,7 +42,7 @@ public class IntHeaderCondition extends AbstractPropertyCondition<Integer, HttpS
     // the second
     return ImmutableSet.copyOf(Lists.transform(args.subList(1, args.size()), new Function<String, Integer>() {
       @Override
-      public Integer apply(@Nullable String input) {
+      public Integer apply(String input) {
         return Integer.valueOf(input);
       }
     }));

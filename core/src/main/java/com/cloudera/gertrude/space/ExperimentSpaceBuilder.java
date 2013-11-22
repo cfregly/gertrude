@@ -61,10 +61,10 @@ final class ExperimentSpaceBuilder {
   void addFlagDefinition(String name, Object baseValue, List<Modifier<Object>> mods) throws ValidationException {
     // Ensure that this flag hasn't been defined yet.
     if (flagDefinitions.containsKey(name)) {
-      throw new ValidationException("Cannot re-define experiment flag \"" + name + "\"");
-    } else {
-      flagDefinitions.put(name, new FlagValueCalculatorImpl<Object>(baseValue, mods));
+      throw new ValidationException("Cannot re-define experiment flag \"" + name + '"');
     }
+
+    flagDefinitions.put(name, new FlagValueCalculatorImpl<Object>(baseValue, mods));
 
     // Second, check compiled flag definition if it exists.
     ExperimentFlag<?> compiledDef = experimentFlags.get(name);
@@ -112,10 +112,10 @@ final class ExperimentSpaceBuilder {
     } else {
       FlagValueData flagValueData = layerBuilder.checkOverrides(info.getId(), overrides);
       ExperimentInfo experimentInfo = new ExperimentInfo(info,
-          flagValueData.baseOverrides,
-          flagValueData.launchOverrides);
+                                                         flagValueData.getBaseOverrides(),
+                                                         flagValueData.getLaunchOverrides());
       layerBuilder.addExperiment(experimentInfo);
-      baseOverridesBySegment.put(info.getId(), flagValueData.baseOverrides);
+      baseOverridesBySegment.put(info.getId(), flagValueData.getBaseOverrides());
     }
   }
 
@@ -194,8 +194,7 @@ final class ExperimentSpaceBuilder {
     for (LayerBuilder lb : layersByDomain.get(info.getId())) {
       layers.add(lb.build(finalSegments));
     }
-    Domain domain = new Domain(info, layers);
-    return domain;
+    return new Domain(info, layers);
   }
 
   FlagValueCalculatorImpl<Object> getFlagFromExperiment(int id, String name) {

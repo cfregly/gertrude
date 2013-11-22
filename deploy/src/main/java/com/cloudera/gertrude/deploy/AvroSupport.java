@@ -42,11 +42,12 @@ import org.apache.avro.specific.SpecificDatumWriter;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 
 public class AvroSupport {
 
@@ -77,7 +78,7 @@ public class AvroSupport {
     DateTimeZone.setDefault(DateTimeZone.forID(timeZoneId));
   }
 
-  public byte[] toBytes(ExperimentDeployment deployment) throws Exception {
+  public byte[] toBytes(ExperimentDeployment deployment) throws IOException {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     BinaryEncoder encoder = EncoderFactory.get().binaryEncoder(baos, null);
     writer.write(deployment, encoder);
@@ -85,14 +86,14 @@ public class AvroSupport {
     return baos.toByteArray();
   }
 
-  public void deploy(ExperimentDeployment deployment, String outputFile) throws Exception {
+  public void deploy(ExperimentDeployment deployment, String outputFile) throws IOException {
     DataFileWriter<ExperimentDeployment> dfw = new DataFileWriter<ExperimentDeployment>(writer)
         .create(ExperimentDeployment.getClassSchema(), new File(outputFile));
     dfw.append(deployment);
     dfw.close();
   }
 
-  private List<? extends Config> getConfigList(Config base, String path, boolean required) {
+  private static List<? extends Config> getConfigList(Config base, String path, boolean required) {
     if (!base.hasPath(path)) {
       if (required) {
         throw new IllegalArgumentException(String.format("Config %s does not have required path: %s",
@@ -118,7 +119,7 @@ public class AvroSupport {
     return deployment;
   }
 
-  private ExperimentDeployment toExperimentDeployment(Config base) {
+  private static ExperimentDeployment toExperimentDeployment(Config base) {
     List<ExperimentDefinition> experimentDefinitions = Lists.newArrayList();
     experimentDefinitions.addAll(getExperiments(getConfigList(base, "EXPERIMENTS", false), false));
     if (base.hasPath("DOMAINS")) {
@@ -133,10 +134,10 @@ public class AvroSupport {
         .build();
   }
 
-  private List<ExperimentFlagDefinition> getFlags(List<? extends Config> flagConfig) {
+  private static List<ExperimentFlagDefinition> getFlags(List<? extends Config> flagConfig) {
     return Lists.transform(flagConfig, new Function<Config, ExperimentFlagDefinition>() {
       @Override
-      public ExperimentFlagDefinition apply(@Nullable Config input) {
+      public ExperimentFlagDefinition apply(Config input) {
         String flagName = input.getString("name");
         if (flagName == null) {
           throw new IllegalArgumentException("Invalid flag config, no name: " + input.resolve().toString());
@@ -145,39 +146,39 @@ public class AvroSupport {
             .setName(flagName)
             .setBaseValue(input.getString("base-value"))
             .setDescription(input.getString("description"))
-            .setFlagType(FlagType.valueOf(input.getString("flag-type").toUpperCase()))
+            .setFlagType(FlagType.valueOf(input.getString("flag-type").toUpperCase(Locale.ENGLISH)))
             .setModifiers(getModifiers(getConfigList(input, "modifiers", false)))
             .build();
       }
     });
   }
 
-  private List<ModifierDefinition> getModifiers(List<? extends Config> modifierList) {
+  private static List<ModifierDefinition> getModifiers(List<? extends Config> modifierList) {
     return Lists.transform(modifierList, new Function<Config, ModifierDefinition>() {
       @Override
-      public ModifierDefinition apply(@Nullable Config input) {
+      public ModifierDefinition apply(Config input) {
         return ModifierDefinition.newBuilder()
             .setValue(input.getString("value"))
             .setConditions(getConditions(getConfigList(input, "conditions", false)))
             .setModifiers(getModifiers(getConfigList(input, "modifiers", false)))
-            .setOperator(ModifierOperator.valueOf(input.getString("operator").toUpperCase()))
+            .setOperator(ModifierOperator.valueOf(input.getString("operator").toUpperCase(Locale.ENGLISH)))
             .setConditionMergeOperator(getConditionOperator(input))
             .build();
       }
     });
   }
 
-  private ConditionOperator getConditionOperator(Config input) {
+  private static ConditionOperator getConditionOperator(Config input) {
     if (input.hasPath("condition-merge-operator")) {
-      return ConditionOperator.valueOf(input.getString("condition-merge-operator").toUpperCase());
+      return ConditionOperator.valueOf(input.getString("condition-merge-operator").toUpperCase(Locale.ENGLISH));
     }
     return null;
   }
 
-  private List<ConditionDefinition> getConditions(List<? extends Config> conditionConfig) {
+  private static List<ConditionDefinition> getConditions(List<? extends Config> conditionConfig) {
     return Lists.transform(conditionConfig, new Function<Config, ConditionDefinition>() {
       @Override
-      public ConditionDefinition apply(@Nullable Config input) {
+      public ConditionDefinition apply(Config input) {
         List<CharSequence> args = Lists.newArrayList();
         if (input.hasPath("args")) {
           args.addAll(input.getStringList("args"));
@@ -192,10 +193,11 @@ public class AvroSupport {
     });
   }
 
-  private List<ExperimentDefinition> getExperiments(List<? extends Config> experimentConfig, final boolean isDomain) {
+  private static Collection<ExperimentDefinition> getExperiments(List<? extends Config> experimentConfig,
+                                                                 final boolean isDomain) {
     return Lists.transform(experimentConfig, new Function<Config, ExperimentDefinition>() {
       @Override
-      public ExperimentDefinition apply(@Nullable Config input) {
+      public ExperimentDefinition apply(Config input) {
         return ExperimentDefinition.newBuilder()
             .setName(input.getString("name"))
             .setDescription(input.getString("description"))
@@ -219,7 +221,7 @@ public class AvroSupport {
     });
   }
 
-  private Long getTime(Config config, String path) {
+  private static Long getTime(Config config, String path) {
     if (!config.hasPath(path)) {
       return null;
     } else {
@@ -227,10 +229,10 @@ public class AvroSupport {
     }
   }
 
-  private List<BucketRange> getBucketRanges(List<? extends Config> bucketRangeConfig) {
+  private static List<BucketRange> getBucketRanges(List<? extends Config> bucketRangeConfig) {
     return Lists.transform(bucketRangeConfig, new Function<Config, BucketRange>() {
       @Override
-      public BucketRange apply(@Nullable Config input) {
+      public BucketRange apply(Config input) {
         return BucketRange.newBuilder()
             .setStart(input.getInt("start"))
             .setEnd(input.getInt("end"))
@@ -239,24 +241,24 @@ public class AvroSupport {
     });
   }
 
-  private List<OverrideDefinition> getOverrides(List<? extends Config> overrideConfig) {
+  private static List<OverrideDefinition> getOverrides(List<? extends Config> overrideConfig) {
     return Lists.transform(overrideConfig, new Function<Config, OverrideDefinition>() {
       @Override
-      public OverrideDefinition apply(@Nullable Config input) {
+      public OverrideDefinition apply(Config input) {
         return OverrideDefinition.newBuilder()
             .setName(input.getString("name"))
             .setBaseValue(input.hasPath("base-value") ? input.getString("base-value") : "")
             .setModifiers(getModifiers(getConfigList(input, "modifiers", false)))
-            .setOperator(OverrideOperator.valueOf(input.getString("operator").toUpperCase()))
+            .setOperator(OverrideOperator.valueOf(input.getString("operator").toUpperCase(Locale.ENGLISH)))
             .build();
       }
     });
   }
 
-  private List<LayerDefinition> getLayers(List<? extends Config> layerConfig) {
+  private static List<LayerDefinition> getLayers(List<? extends Config> layerConfig) {
     return Lists.transform(layerConfig, new Function<Config, LayerDefinition>() {
       @Override
-      public LayerDefinition apply(@Nullable Config input) {
+      public LayerDefinition apply(Config input) {
         return LayerDefinition.newBuilder()
             .setName(input.getString("name"))
             .setId(input.getInt("id"))
@@ -270,10 +272,10 @@ public class AvroSupport {
     });
   }
 
-  private List<DiversionDefinition> getDiversions(List<? extends Config> divConfig) {
+  private static List<DiversionDefinition> getDiversions(List<? extends Config> divConfig) {
     return Lists.transform(divConfig, new Function<Config, DiversionDefinition>() {
       @Override
-      public DiversionDefinition apply(@Nullable Config input) {
+      public DiversionDefinition apply(Config input) {
         return DiversionDefinition.newBuilder()
             .setId(input.getInt("id"))
             .setName(input.getString("name"))

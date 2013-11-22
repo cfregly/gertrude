@@ -30,7 +30,6 @@ public final class FileExperimentSpaceLoader extends ExperimentSpaceLoader {
   private static final long DEFAULT_POLL_INTERVAL_MILLIS = 5 * 1000L;
 
   private final File dataFile;
-  private final FileAlterationMonitor monitor;
 
   public FileExperimentSpaceLoader(File dataFile) throws Exception {
     this(dataFile, DEFAULT_POLL_INTERVAL_MILLIS);
@@ -39,8 +38,8 @@ public final class FileExperimentSpaceLoader extends ExperimentSpaceLoader {
   public FileExperimentSpaceLoader(File dataFile, long pollIntervalMillis) throws Exception {
     Preconditions.checkArgument(!dataFile.isDirectory(), "Data file cannot be a directory");
     this.dataFile = dataFile;
-    this.monitor = getMonitor(pollIntervalMillis);
-    this.monitor.start();
+    FileAlterationMonitor monitor = getMonitor(pollIntervalMillis);
+    monitor.start();
   }
 
   private FileAlterationMonitor getMonitor(long pollIntervalMillis) {
