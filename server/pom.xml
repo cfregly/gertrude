@@ -38,8 +38,8 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.tomcat</groupId>
-      <artifactId>servlet-api</artifactId>
+      <groupId>javax</groupId>
+      <artifactId>javaee-web-api</artifactId>
     </dependency>
 
     <dependency>
